@@ -1,0 +1,29 @@
+<div class="w-full grid grid-cols-1 md:grid-cols-2 gap-2 bg-gray-100 p-2 rounded-2xl">
+    <div class="px-4 py-2 rounded-2xl bg-white">
+        <div>Correct</div>
+        <div class="font-bold text-base">{{ currentQuestionSummary()?.summary?.correct }} Mks</div>
+    </div>
+    <div class="px-4 py-2 rounded-2xl bg-white">
+        <div>Penalty</div>
+        <div class="font-bold text-base">
+            @if((currentQuestionSummary()?.summary?.penalty ?? 0) > 0){
+                <span>-</span>
+            }
+            
+            {{ currentQuestionSummary()?.summary?.penalty }} Mks
+        </div>
+    </div>
+    <div class="px-4 py-2 rounded-2xl bg-white">
+        <div>Violation</div>
+        <div class="font-bold text-base">
+            @if((currentQuestionSummary()?.summary?.violation ?? 0) > 0){
+                <span>-</span>
+            }
+            {{ currentQuestionSummary()?.summary?.violation }} Mks
+        </div>
+    </div>
+    <div class="px-4 py-2 rounded-2xl bg-white">
+        <div>Score</div>
+        <div class="font-bold text-base">{{ currentQuestionSummary()?.summary?.score }} Mks</div>
+    </div>
+</div>

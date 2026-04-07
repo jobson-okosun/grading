@@ -1,0 +1,11 @@
+<div class="flex items-center gap-3">
+    <div class="bg-white rounded-2xl p-1 border border-gray-200">
+        <div class="flex gap-1.5">
+            @for(item of pages(); track item; let i = $index) {
+                <button [disabled]="!item.allowNavigation" (click)="onPageChange(item.page)" [class.bg-gray-600!]="currentPage() === i" [class.text-white!]="currentPage() === i" class="px-4 py-2 font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg text-center cursor-pointer transition">
+                    {{ item.page + 1 }}
+                </button>
+            }
+        </div>
+    </div>
+</div>

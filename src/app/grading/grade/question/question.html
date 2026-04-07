@@ -1,0 +1,80 @@
+ <div class="bg-white rounded-2xl overflow-hidden">
+    <div class="bg-white py-4 px-4 border-b border-gray-300 cursor-pointer">
+        <div class="flex items-center justify-between">
+            <span class="font-bold">Question {{ questionIndex() + 1 }}</span>
+            <span class="text-sm text-gray-500">
+                Max score: <strong> {{ questionGuide()?.score }}</strong>
+            </span>
+        </div>
+    </div>
+    <div class="bg-white p-2">
+        <div class="flex flex-col gap-2">
+            <!-- section -->
+            @for(item of questionGuide()?.sections; track item; let i = $index) {
+               <div class="border border-gray-200 rounded-md p-2">
+                    <div class="cursor-pointer flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-1">
+                            <span class="font-bold">Section {{ item.name }}</span>
+                        </div>
+                        <span class="text-sm text-gray-500">
+                            Max score: <strong>{{ item.total_score }}</strong>
+                        </span>
+                    </div>
+                    @if(sectionsAnnotation()[i]?.annotations?.length) {
+                        <div  class="border border-gray-100 divide-y divide-gray-200 rounded-md p-2 bg-gray-100 flex flex-col cursor-pointer">
+                            @for(ann of sectionsAnnotation()[i].annotations ; track ann.identity.id) {
+                                @if(ann.mark_category == markTypes().SCORE) {
+                                    <div 
+                                    [class.p-1]="ann.identity.highlight" 
+                                    [class.border!]="ann.identity.highlight" 
+                                    [class.border-green-600]="ann.identity.highlight" 
+                                    [class.rounded-sm]="ann.identity.highlight" 
+                                    class="flex items-center gap-2 justify-between py-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="px-4 py-2 text-xs font-bold rounded-lg bg-white text-green-500">{{ ann.code }}{{ ann.score }}</div>
+                                            <div>{{ ann.identity.scoreUsage }} of {{ ann.identity.scoreMaxOccurence }}</div>
+                                        </div>
+
+                                        <strong>{{ ann.score }} Mrk</strong>
+                                    </div>
+                                }
+
+                                @if(ann.mark_category == markTypes().PENALTY) {
+                                    <div
+                                    [class.p-1]="ann.identity.highlight" 
+                                    [class.border!]="ann.identity.highlight" 
+                                    [class.border-green-600]="ann.identity.highlight" 
+                                    [class.rounded-sm]="ann.identity.highlight" 
+                                    class="flex items-center gap-2 justify-between py-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="px-4 py-2 text-xs font-bold rounded-lg bg-white text-amber-600">{{ ann.code }}{{ ann.score }}</div>
+                                            <div>{{ ann.identity.scoreUsage }} of {{ ann.identity.scoreMaxOccurence }}</div>
+                                        </div>
+
+                                        <strong>{{ ann.score }} Mrk</strong>
+                                    </div>
+                                }
+
+                                @if(ann.mark_category == markTypes().VIOLATION) {
+                                    <div
+                                    [class.p-1]="ann.identity.highlight" 
+                                    [class.border!]="ann.identity.highlight" 
+                                    [class.border-green-600]="ann.identity.highlight" 
+                                    [class.rounded-sm]="ann.identity.highlight" 
+                                    class="flex items-center gap-2 justify-between py-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="px-4 py-2 text-xs font-bold rounded-lg bg-white text-red-500">{{ ann.code }}{{ ann.score }}</div>
+                                            <div>{{ ann.identity.scoreUsage }} of {{ ann.identity.scoreMaxOccurence }}</div>
+                                        </div>
+
+                                        <strong>{{ ann.score }} Mrk</strong>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

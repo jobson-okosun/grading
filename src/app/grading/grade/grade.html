@@ -1,0 +1,104 @@
+<section class="h-dvh flex flex-col text-sm">
+    <!-- topbar -->
+    <app-overview />
+
+    <!-- main content -->
+    <div class="flex-1 overflow-hidden">
+        <div class="flex h-full">
+            <!-- sidebar -->
+            <div class="w-[21%] 2xl:w-[18%] h-full overflow-y-auto">
+                <div class="h-full p-2 bg-gray-100 flex flex-col gap-2">
+                    <app-candidate-profile />
+                    <div class="rounded-2xl bg-white p-3 border border-gray-200 flex flex-col gap-3">
+                        <div class="flex justify-between items-center gap-2">
+                            <div class="font-bold">Section {{ currrentQuestionCurrentSection()?.name }}</div>
+                            <div class="rounded-2xl p-1 border border-gray-200 flex gap-2">
+                                <button (click)="prevSection()" [disabled]="store().questionCurrentSectionIndex == 0" class="-rotate-180 w-8 h-8 flex items-center justify-center rounded-lg bg-gray-600 transition cursor-pointer disabled:opacity-50">
+                                    <svg class=" stroke-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18" />
+                                    </svg>
+                                </button>
+                                <button (click)="nextSection()" [disabled]="(store().questionCurrentSectionIndex == (this.store().currentQuestion?.gradingGuide?.sections?.length ?? 0) - 1)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-600 transition cursor-pointer disabled:opacity-50">
+                                    <svg class=" stroke-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                            @if(hasAnyScore()) {
+                                <app-section-score />
+                                <app-scores />
+                            } @else {
+                                <div class="p-3 mt-10 rounded-2xl bg-gray-100">
+                                    <div class="flex flex-col justify-center items-center gap-3">
+                                        <div class="size-30 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <svg class="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+
+                                        <div class="text-center">
+                                            <div class="text-xs font-bold mb-3 uppercase">No Scores</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                </div>
+            </div>
+
+            <!-- content -->
+            <div class="flex-1 h-full overflow-hidden flex flex-col px-2 py-1">
+                <!-- status bar -->
+                <div class="flex items-center justify-between gap-5 mb-2">
+                    <app-paginator />
+
+                    <app-navigation />
+                    
+                    <app-tools />
+                </div>
+
+                <!-- canvas area -->
+                <div class="flex-1 overflow-hidden">
+                    <div class="border border-dashed border-gray-300 bg-white rounded-2xl h-full relative overflow-hidden workspace-container">
+                        @if(store().canvas.type == 'DEFAULT') {
+                            <app-canvas />
+                        }
+                        
+                        <div class="absolute top-0 left-0 z-10" style="width: calc(100% - 15px); height: calc(100% - 15px);">
+                            <div class="relative w-full h-full">
+                                <app-workspace />
+
+                                @if(store().canvas.type == 'OVERLAY') {
+                                    <div class="absolute inset-0 w-full h-full">
+                                        <app-canvas />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <app-status />
+            </div>
+
+            <!-- sidebar -->
+            @if(questionSidebarOpen()) {
+                <div class="w-[21%] 2xl:w-[18%] h-full overflow-hidden">
+                    <div class="h-full bg-gray-100 p-2 flex flex-col gap-2 overflow-y-auto">
+                        <!-- accordion item -->
+                        @if(store().currentQuestion) {
+                            <app-current-question/>
+                        }
+                        
+                        @for(item of questions(); track $index) {
+                           @if($index !== $any(store().currentQuestionIndex)) {
+                               <app-question [questionIndex]="$index" />
+                           }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

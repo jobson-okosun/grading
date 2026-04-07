@@ -1,0 +1,86 @@
+ <div class="bg-white rounded-2xl overflow-hidden">
+    <div class="bg-gray-600 text-white py-4 px-4 border-b border-gray-300 cursor-pointer">
+        <div class="flex items-center justify-between">
+            <span class="font-bold">Question {{ store().currentQuestionIndex + 1 }}</span>
+            <span class="text-sm">
+                Max score: <strong>{{ store().currentQuestion?.gradingGuide?.score }}</strong>
+            </span>
+        </div>
+    </div>
+    <div class="bg-white p-1">
+        <app-question-tools />
+        <div class="flex flex-col gap-2 mt-2">
+            <!-- section -->
+            @for(item of store().currentQuestion?.gradingGuide?.sections; track item; let i = $index) {
+                <div class="border border-gray-200 rounded-md p-2">
+                    <div (click)="setCurrentSection(i)" class="cursor-pointer flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-1">
+                            <span class="rounded-full size-7 flex items-center justify-center bg-gray-100">
+                                <!-- Todo: when selected, open a modal for confirmation they want to grade that section -->
+                                <input [checked]="store().questionCurrentSectionIndex == i" #radio type="radio" name="sections" class="accent-green-600">
+                            </span>
+                            <span class="font-bold">Section {{ item.name }}</span>
+                        </div>
+                        <span class="text-sm text-gray-500">
+                            Max score: <strong>{{ item.total_score }}</strong>
+                        </span>
+                    </div>
+
+                    @if(sectionsAnnotation()[i]?.annotations?.length) {
+                        <div  class="border border-gray-100 divide-y divide-gray-200 rounded-md p-2 bg-gray-100 flex flex-col gap-1 cursor-pointer">
+                            @for(ann of sectionsAnnotation()[i].annotations ; track ann.identity.id) {
+                                @if(ann.mark_category == markTypes().SCORE) {
+                                    <div
+                                    (click)="selectAnnotation(ann, $event)" 
+                                    [class.border-green-600!]="ann.identity.highlight" 
+                                    [class.border-red-500!]="ann.identity.versioned"
+                                    [class.opacity-70!]="ann.identity.versioned"
+                                    class="flex items-center gap-2 justify-between py-2 border border-transparent rounded-sm p-1">
+                                        <div class="flex items-center gap-2">
+                                            <div class="px-4 py-2 text-xs font-bold rounded-lg bg-white text-green-500">{{ ann.code }}{{ ann.score }}</div>
+                                            <div>{{ ann.identity.scoreUsage }} of {{ ann.identity.scoreMaxOccurence }}</div>
+                                        </div>
+
+                                        <strong>{{ ann.score }} Mrk</strong>
+                                    </div>
+                                }
+
+                                @if(ann.mark_category == markTypes().PENALTY) {
+                                    <div
+                                    (click)="selectAnnotation(ann, $event)" 
+                                    [class.border-green-600!]="ann.identity.highlight" 
+                                    [class.border-red-500!]="ann.identity.versioned"
+                                    [class.opacity-70!]="ann.identity.versioned"
+                                    class="flex items-center gap-2 justify-between py-2 border border-transparent rounded-sm p-1">
+                                        <div class="flex items-center gap-2">
+                                            <div class="px-4 py-2 text-xs font-bold rounded-lg bg-white text-amber-600">{{ ann.code }}{{ ann.score }}</div>
+                                            <div>{{ ann.identity.scoreUsage }} of {{ ann.identity.scoreMaxOccurence }}</div>
+                                        </div>
+
+                                        <strong>{{ ann.score }} Mrk</strong>
+                                    </div>
+                                }
+
+                                @if(ann.mark_category == markTypes().VIOLATION) {
+                                    <div
+                                    (click)="selectAnnotation(ann, $event)" 
+                                    [class.border-green-600!]="ann.identity.highlight" 
+                                    [class.border-red-500!]="ann.identity.versioned"
+                                    [class.opacity-70!]="ann.identity.versioned"    
+                                    class="flex items-center gap-2 justify-between py-2 border border-transparent rounded-sm p-1">
+                                        <div class="flex items-center gap-2">
+                                            <div class="px-4 py-2 text-xs font-bold rounded-lg bg-white text-red-500">{{ ann.code }}{{ ann.score }}</div>
+                                            <div>{{ ann.identity.scoreUsage }} of {{ ann.identity.scoreMaxOccurence }}</div>
+                                        </div>
+
+                                        <strong>{{ ann.score }} Mrk</strong>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

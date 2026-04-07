@@ -1,0 +1,130 @@
+<div class="bg-white rounded-2xl cursor-pointer select-none">
+    <div class="space-y-1.5">
+        @if(correctScores()?.length) {
+            @if(totalCorrectMaxOccurrences() > totalCorrectUsedScores()) {
+                <div class="p-3 rounded-2xl bg-gray-100">
+                    <div class="text-xs font-bold mb-3 uppercase">Scores</div>
+                    <div class="flex flex-wrap gap-2.5">
+                        @for(item of correctScores(); track item) {
+                            @if(item.max_occurrence > item.usage) {
+                                @if(item.marker_discretion) {
+                                    <div (click)="input.toggle($event)" class="relative group">
+                                        <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-red-500 border border-transparent group-hover:bg-green-500 group-hover:text-white transition flex gap-1 items-center">
+                                            <span>{{ item.code }}{{ item.max_score }}</span>
+                                            <span class="bg-green-500 text-white group-hover:bg-white group-hover:text-green-500 transition border border-transparent group-hover:border-green-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                                {{ item.max_occurrence - item.usage }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                     <p-popover #input>
+                                        <div class="p-1 form-group">
+                                            <label>Enter score (Max: {{ item.max_score }}Mks)</label>
+                                            <input #inputScore (input)="btn.disabled = +(inputScore.value) > item.max_score" type="text" class="form-control focus:border-gray-400!">
+                                            <button #btn [disabled]="!inputScore.value" (click)="applySectionScore(+(inputScore.value), item); input.hide()" class="btn fill w-full!">Apply</button>
+                                        </div>
+                                    </p-popover>
+                                } @else {
+                                    <div (click)="applySectionScore(item.max_score, item)" class="relative group">
+                                        <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-green-500 border border-transparent group-hover:bg-green-500 group-hover:text-white transition flex gap-1 items-center">
+                                            <span>{{ item.code }}{{ item.max_score }}</span>
+                                            <span class="bg-green-500 text-white group-hover:bg-white group-hover:text-green-500 transition border border-transparent group-hover:border-green-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                                {{ item.max_occurrence - item.usage }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        }
+
+        @if(penaltyScores()?.length) {
+            @if(totalPenaltyMaxOccurrences() > totalPenaltyUsedScores()) {
+                <div class="p-3 rounded-2xl bg-gray-100">
+                    <div class="text-xs font-bold mb-3 uppercase">Penalty</div>
+                    <div class="flex flex-wrap gap-1.5">
+                        @for(item of penaltyScores(); track item) {
+                            @if(item.max_occurrence > item.usage) {
+                                @if(item.marker_discretion) {
+                                    <div (click)="input.toggle($event)" class="relative group">
+                                        @if(item.marker_discretion) {
+                                            <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-red-500 border border-transparent group-hover:bg-amber-500 group-hover:text-white transition  flex gap-1 items-center">
+                                               <span>{{ item.code }}{{ item.max_score }}</span>
+                                                <span class="bg-amber-500 text-white group-hover:bg-white group-hover:text-amber-500 transition border border-transparent group-hover:border-amber-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                                    {{ item.max_occurrence - item.usage }}
+                                                </span>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <p-popover #input>
+                                        <div class="p-1 form-group">
+                                            <label>Enter score (Max: -{{ item.max_score }}Mks)</label>
+                                            <input #inputScore (input)="btn.disabled = +(inputScore.value) > item.max_score" type="text" class="form-control focus:border-gray-400!">
+                                            <button #btn [disabled]="!inputScore.value" (click)="applySectionScore(+(inputScore.value), item); input.hide()" class="btn fill w-full!">Apply</button>
+                                        </div>
+                                    </p-popover>
+                                } @else { 
+                                    <div (click)="applySectionScore(item.max_score, item)" class="relative group">
+                                        <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-amber-500 border border-transparent group-hover:bg-amber-500 group-hover:text-white transition  flex gap-1 items-center">
+                                            <span>{{ item.code }}{{ item.max_score }}</span>
+                                            <span class="bg-amber-500 text-white group-hover:bg-white group-hover:text-amber-500 transition border border-transparent group-hover:border-amber-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                                {{ item.max_occurrence - item.usage }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        }
+
+        @if(violationScores()?.length) {
+            @if(totalViolationMaxOccurrences() > totalViolationUsedScores()) {
+                <div class="p-3 rounded-2xl bg-gray-100"> 
+                    <div class="text-xs font-bold mb-3 uppercase">Violation</div>
+                    <div class="flex flex-wrap gap-1.5">
+                        @for(item of violationScores(); track item) {
+                            @if(item.max_occurrence > item.usage) {
+                                @if(item.marker_discretion) {
+                                    <div (click)="input.toggle($event)" class="relative group">
+                                        @if(item.marker_discretion) {
+                                            <div class="px-3 py-2 text-sm font-bold rounded-lg bg-red-500 text-white border border-transparent group-hover:bg-red-500 group-hover:text-white transition flex gap-1 items-center">
+                                                <span>{{ item.code }}{{ item.max_score }}</span>
+                                                <span class="bg-white text-red-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                                    {{ item.max_occurrence - item.usage }}
+                                                </span>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <p-popover #input>
+                                        <div class="p-1 form-group">
+                                            <label>Enter score (Max: -{{ item.max_score }}Mks)</label>
+                                            <input #inputScore (input)="btn.disabled = +(inputScore.value) > item.max_score" type="text" class="form-control focus:border-gray-400!">
+                                            <button #btn [disabled]="!inputScore.value" (click)="applySectionScore(+(inputScore.value), item); input.hide()" class="btn fill w-full!">Apply</button>
+                                        </div>
+                                    </p-popover>
+                                } @else { 
+                                    <div (click)="applySectionScore(item.max_score, item)" class="relative group">
+                                        <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-red-500 border border-transparent group-hover:bg-red-500 group-hover:text-white transition flex gap-1 items-center">
+                                           <span>{{ item.code }}{{ item.max_score }}</span>
+                                            <span class="bg-red-500 text-white group-hover:bg-white group-hover:text-red-500 transition border border-transparent group-hover:border-red-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                                {{ item.max_occurrence - item.usage }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        }
+                    </div> 
+                </div>
+            }
+        }
+    </div>
+</div>

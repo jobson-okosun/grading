@@ -1,0 +1,30 @@
+<div class="flex justify-between item-center p-2">
+    <div class="flex divide-x divide-gray-300">
+        <div class="pr-3">Question <strong>{{ currentQuestionIndex() + 1 }}</strong> of <strong>{{ totalQuestions() }}</strong> </div>
+        <div class="px-3">Page <strong>{{ currentPage() + 1 }}</strong> of <strong>{{ totalPages() }}</strong> </div>
+    </div>
+
+    <div>
+        @if(annotationToApply()) {
+            <div class="flex gap-3">
+                @if(annotationToApply()?.section){
+                    <div class="flex gap-1 items-center">
+                        <span>Section:</span> 
+                        <svg class="stroke-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#4a4a4a" fill="none" stroke="#4a4a4a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 14.5C5 14.5 6.5 14.5 8.5 18C8.5 18 14.0588 8.83333 19 7" />
+                        </svg> 
+                    </div>
+                }
+
+                @if(annotationToApply()?.score){ 
+                    <div class="flex gap-1 items-center">
+                        <span>Score:</span> 
+                        <svg class="stroke-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#4a4a4a" fill="none" stroke="#4a4a4a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 14.5C5 14.5 6.5 14.5 8.5 18C8.5 18 14.0588 8.83333 19 7" />
+                        </svg> 
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
