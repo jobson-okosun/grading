@@ -74,7 +74,7 @@ export class DataService {
 
         this._store.updateStore({ gradingInfo: info })
 
-        return this._http.get<gradingInformation>(`${environment.developmentIP}/sch_mon_grd/reports/grading/info/assessment/${this.assessmentId()}`)
+        return this._http.get<gradingInformation>(`${environment.developmentIP2}`)
             .pipe(
                 tap((response) => {
                     this._store.updateStore({ gradingInfo: response })
@@ -119,7 +119,7 @@ export class DataService {
             questions: MOCK_QUESTIONS,
         }))
 
-        return this._http.get<SeedParticipantSectionTranscript>(`${environment.developmentIP}/sch_mon_grd/reports/marker_app_ui/seed/fetch_seed_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
+        return this._http.get<SeedParticipantSectionTranscript>(`${environment.schedulerIP}/sch_mon_grd/reports/marker_app_ui/seed/fetch_seed_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
             .pipe(
                 tap((response) => {
                     if (save) {
@@ -140,7 +140,7 @@ export class DataService {
             questions: MOCK_QUESTIONS,
         }))
 
-        return this._http.get<ParticipantSectionTranscript[]>(`${environment.developmentIP}/sch_mon_grd/reports/grading/items_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
+        return this._http.get<ParticipantSectionTranscript[]>(`${environment.schedulerIP}/sch_mon_grd/reports/grading/items_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
             .pipe(
                 tap((response) => {
                     this.tempStore.update(v => ({
@@ -157,7 +157,7 @@ export class DataService {
             candidate: MOCK_RESULT,
         }))
 
-        return this._http.get<Participant_Result_Data_DTO>(`${environment.developmentIP}/sch_mon_grd/reports/result/participant_result/assessment/${this.assessmentId()}/participant/${this.participantId()}`)
+        return this._http.get<Participant_Result_Data_DTO>(`${environment.schedulerIP}/sch_mon_grd/reports/result/participant_result/assessment/${this.assessmentId()}/participant/${this.participantId()}`)
             .pipe(
                 tap((response) => {
                     this.tempStore.update(v => ({
@@ -169,6 +169,6 @@ export class DataService {
     }
 
     finishGrading(payload: Grading[]): Observable<ResourceCreated> {
-        return this._http.post<ResourceCreated>(`${environment.developmentIP}/sch_mon_grd/reports/grading/grade_manual_items/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`, payload)
+        return this._http.post<ResourceCreated>(`${environment.schedulerIP}/sch_mon_grd/reports/grading/grade_manual_items/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`, payload)
     }
 }
