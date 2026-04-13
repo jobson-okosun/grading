@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Store } from '../../store/store';
 import { GradingService } from '../../services/grading.service';
 import { HotToastService } from '@ngxpert/hot-toast';
@@ -18,36 +18,68 @@ export class Workspace {
   private _toast = inject(HotToastService)
   private _drawingStore = inject(DrawingAndWritingStore)
 
-  currentQuestion = computed(() => this.store().currentQuestion)
-  currentPageAnnotations = signal<QuestionAnnotation[]>([])
   markTypes = signal(SchemeMarkCategory)
   currentPage = computed(() => this._drawingStore.store().currentPage)
   highlightedAnnotation = computed(() => this._gradingService.highlightedAnnotation())
+  annotationShapes = computed(() => this._gradingService.annotationShapes())
 
   store = computed(() => this._store.store())
   annotationToApply = computed(() => this._gradingService.annotationToApply())
   currentPageIsBlank = computed(() => this._gradingService.currentPageIsBlank())
 
+  useConstraints = computed(() => this._gradingService.useConstraints())
+  currentQuestionSectionsAnnotations = computed(() => this._gradingService.currentQuestionSectionsAnnotations())
 
-  constructor() {
-    effect(() => {
-      if (this.store()) {
-        const questionAnnotations = this.store().questions[this.store().currentQuestionIndex].annotations;
+  currentPageAnnotations = computed(() => {
+    if (!this.currentQuestionSectionsAnnotations()) {
+      return []
+    }
 
-        if (!questionAnnotations?.length) {
-          this.currentPageAnnotations.set([])
-          return
-        }
+    return this.currentQuestionSectionsAnnotations()?.map(section => section.annotations).flat().filter(ann => ann.page == this.currentPage())
+  })
 
-        const pageAnnotations = questionAnnotations.filter(ann => ann.page == this.currentPage())
-        this.currentPageAnnotations.set(pageAnnotations)
-      }
-    })
+  getAnnotationOffsetX(annotation: QuestionAnnotation): number {
+    switch (annotation.identity.shape) {
+      case this.annotationShapes().RING:
+        return 35
+      case this.annotationShapes().UNDERLINE:
+        return 40
+      case this.annotationShapes().X:
+        return 42
+      case this.annotationShapes().NONE:
+        return 25
+      case this.annotationShapes().CHECK:
+        return 25
+      case this.annotationShapes().BAN:
+        return 42
+    }
+  }
+
+  getAnnotationOffsetY(annotation: QuestionAnnotation): number {
+    switch (annotation.identity.shape) {
+      case this.annotationShapes().RING:
+        return 25
+      case this.annotationShapes().UNDERLINE:
+        return 10
+      case this.annotationShapes().X:
+        return 25
+      case this.annotationShapes().NONE:
+        return 25
+      case this.annotationShapes().CHECK:
+        return 25
+      case this.annotationShapes().BAN:
+        return 25
+    }
   }
 
 
   onPageClick(event: Event) {
     if (this.currentPageIsBlank()) {
+      return
+    }
+
+    if (this.highlightedAnnotation()) {
+      this._gradingService.unHighlightCurrentQuestionnnotations()
       return
     }
 
@@ -57,18 +89,18 @@ export class Workspace {
       return
     }
 
-    if (this.highlightedAnnotation()) {
-      return
-    }
-
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = (event as MouseEvent).clientX - rect.left;
-    const y = (event as MouseEvent).clientY - rect.top;
+    const x = (event as MouseEvent).offsetX;
+    const y = (event as MouseEvent).offsetY;
 
     this.applySectionScore([x.toString(), y.toString()])
   }
 
   applySectionScore(position: string[]) {
+    if (!this.useConstraints()) {
+      this._toast.error("Cannot apply score on this page", { position: 'bottom-center' })
+      return
+    }
+
     if (!position[0] || !position[1]) {
       return
     }

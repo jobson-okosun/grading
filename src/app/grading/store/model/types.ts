@@ -24,7 +24,16 @@ export class AnnotationIdentity {
     versioned: boolean
     applied: boolean
     highlight: boolean
-    label: 'CORRECT' | 'PENALTY' | 'VIOLATION' | 'NONE'
+    shape: AnnotationShape
+}
+
+export enum AnnotationShape {
+    RING = 'RING',
+    UNDERLINE = 'UNDERLINE',
+    X = 'X',
+    NONE = 'NONE',
+    CHECK = 'CHECK',
+    BAN = 'BAN'
 }
 
 export class AnnotationToApply {
@@ -33,6 +42,7 @@ export class AnnotationToApply {
     section: SchemeQuestionSectionsTransformed | null
     score: SchemeQuestionSectionScoreScoreDB | null
     applied: boolean
+    shape: AnnotationScoreShape
 
     constructor() {
         this.section = null
@@ -41,4 +51,10 @@ export class AnnotationToApply {
         this.position = []
         this.gradeScore = 0
     }
+}
+
+export class AnnotationScoreShape {
+    correct: AnnotationShape | undefined
+    penalty: AnnotationShape | undefined
+    violation: AnnotationShape | undefined
 }

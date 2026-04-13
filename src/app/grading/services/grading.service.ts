@@ -1,7 +1,7 @@
-import { computed, effect, inject, Injectable, signal } from "@angular/core";
+import { computed, effect, inject, Injectable, linkedSignal, signal, untracked } from "@angular/core";
 import { Store } from "../store/store";
-import { AnnotationIdentity, AnnotationToApply, GradeSummary } from "../store/model/types";
-import { ParticipantSectionTranscript, QuestionAnnotation, QuestionPage, SchemeMarkCategory, SchemePageData, SchemeQuestionSectionScoreScoreDB } from "../model/types";
+import { AnnotationIdentity, AnnotationScoreShape, AnnotationShape, AnnotationToApply, GradeSummary } from "../store/model/types";
+import { GeneralScoreDB, Grading, ParticipantSectionTranscript, QuestionAnnotation, QuestionPage, SchemeMarkCategory, SchemePageData, SchemeQuestionSectionScoreScoreDB, SchemeQuestionSectionsTransformed, SchemeQuestionsTransformed, SchemeScoreBoundary } from "../model/types";
 import { HotToastService } from "@ngxpert/hot-toast";
 import { DrawingAndWritingStore } from "../grade/canvas/sevices/canvas-store";
 import { Store as DrawingStore } from '../grade/canvas/model/store.mode'
@@ -14,94 +14,78 @@ export class GradingService {
 
     store = computed(() => this._store.store())
     currentQuestionIndex = computed(() => this.store().currentQuestionIndex)
-    currentQuestion = computed(() => this.store().currentQuestion)
+    currentQuestion = computed(() => this.store().questions[this.currentQuestionIndex()])
+    currentQuestionMarkingGuide = computed(() => this.store()?.markingGuide?.questions.find((q) => q.item_id === this.currentQuestion().item.id))
+    currentQuestionHasResponse = computed(() => this.currentQuestion()?.item_score.un_graded_response.length)
     questionCurrentSectionIndex = computed(() => this.store().questionCurrentSectionIndex)
     currentPage = computed(() => this._drawingStore.store().currentPage)
 
-    lastCurrentQuestionIndex = signal<number | null>(null)
     lastCurrentQuestionId = signal<string | null>(null)
     lastCurrentSectionIndex = signal<number | null>(null)
 
     annotationToApply = signal<AnnotationToApply | null>(null)
+    annotationShapes = signal(AnnotationShape)
     markTypes = signal(SchemeMarkCategory)
     gradeSummary = signal<{ id: string, summary: GradeSummary }[]>([])
 
+    currentQuestionSectionCorrectScores = computed(() => this.currentQuestionMarkingGuide()?.sections?.[this.store().questionCurrentSectionIndex]?.scores_correct)
+    currentQuestionSectionPenaltyScores = computed(() => this.currentQuestionMarkingGuide()?.sections?.[this.store().questionCurrentSectionIndex]?.scores_penalty)
+    currentQuestionSectionViolationScores = computed(() => this.currentQuestionMarkingGuide()?.sections?.[this.store().questionCurrentSectionIndex]?.scores_violation)
+    generalCorrectScores = computed(() => this.store().markingGuide?.general_scores_correct ?? [])
+    generalPenaltyScores = computed(() => this.store().markingGuide?.general_scores_penalty ?? [])
+    generalViolationScores = computed(() => this.store().markingGuide?.general_scores_violation ?? [])
 
-    onQuestionIndexChanges = effect(() => {
-        if (this.currentQuestionIndex() >= 0 && this.lastCurrentQuestionIndex() !== this.currentQuestionIndex()) {
-            this.questionIndexChangeHandler()
+    currentQuestionSectionsAnnotations = signal<{ section: string, annotations: QuestionAnnotation[] }[]>([])
+    questionsGradedStatus = signal<{ questionId: string, questionIndex: number, sectionsUngraded: SchemeQuestionSectionsTransformed[], status: boolean }[]>([])
+    questionsPagesStatus = signal<{ questionId: string, questionIndex: number, ungradedPages: QuestionPage[], status: boolean }[]>([])
+
+    isGradingSeed = linkedSignal(() => this.store().gradingInfo?.isSeed)
+
+    gradingStarted = signal(false)
+
+    useConstraints = computed(() => {
+        // todo: pending on the type of grading. e.g seed
+        // if seed, onload don't use constraints
+        // if not seed, onload use constraints
+        if (this.isGradingSeed() && !this.gradingStarted()) {
+            return false
+        } else if (this.isGradingSeed() && this.gradingStarted()) {
+            return true
+        } else {
+            return true
         }
     })
 
     onCurrentQuestionChanges = effect(() => {
-        if (this.store().currentQuestion && this.lastCurrentQuestionId() !== this.currentQuestion()?.question.item.id) {
-            this.questionChangeHandler()
-            this.updateQuestionGradingStatus()
+        if (this.currentQuestion() && this.lastCurrentQuestionId() !== this.currentQuestion().item.id) {
+            untracked(() => {
+                this.questionChangeHandler()
+                this.updateQuestionGradingStatus()
+            });
         }
     })
 
-    questionIndexChangeHandler() {
-        if (!(this.store().questions.length > 0)) {
-            return
-        }
-
-        this.lastCurrentQuestionIndex.set(this.currentQuestionIndex())
-
-        const question = this.store().questions[this.currentQuestionIndex()]
-        this._store.updateStore({ currentQuestion: { question } })
-    }
-
     questionChangeHandler() {
-        const question = this.store().currentQuestion
-        if (!question) {
-            return
-        }
+        this.lastCurrentQuestionId.set(this.currentQuestion().item.id)
 
-        const gradingGuide = this.store().markingGuide.questions.find((q) => q.item_id === question.question.item.id)
-
-        this.lastCurrentQuestionId.set(question.question.item.id)
-
-        this._store.updateStore({
-            currentQuestion: {
-                ...question,
-                gradingGuide
-            },
-            questionCurrentSectionIndex: 0
-        })
-
+        this._store.updateStore({ questionCurrentSectionIndex: 0 })
+        this.setQuestionScoreUsage()
         this.updateGradingSummary()
         this.sectionIndexChangeHandler()
     }
 
     onSectionIndexChanges = effect(() => {
         if (this.questionCurrentSectionIndex() >= 0 && this.lastCurrentSectionIndex() !== this.questionCurrentSectionIndex()) {
-            this.sectionIndexChangeHandler()
+            untracked(() => {
+                this.sectionIndexChangeHandler()
+            });
         }
     })
 
     sectionIndexChangeHandler() {
-        const question = this.store().currentQuestion
-        if (!question) {
-            return
-        }
-
-        const gradingGuide = this.store().markingGuide.questions.find((q) => q.item_id === question.question.item.id)
-        const section = gradingGuide?.sections[this.store().questionCurrentSectionIndex]
-
-        const sectionCorrectScores = section?.scores_correct
-        const sectionPenaltyScores = section?.scores_penalty
-        const sectionViolationScores = section?.scores_violation
+        const section = this.currentQuestionMarkingGuide()?.sections[this.store().questionCurrentSectionIndex]
 
         this.lastCurrentSectionIndex.set(this.store().questionCurrentSectionIndex)
-
-        this._store.updateStore({
-            currentQuestion: {
-                ...question,
-                sectionCorrectScores,
-                sectionPenaltyScores,
-                sectionViolationScores,
-            }
-        })
 
         if (!section) {
             return
@@ -111,19 +95,120 @@ export class GradingService {
         this.annotationToApply.set({ ...annotationToApply, section })
     }
 
+    onCurrentQuestionSectionAnnotation = effect(() => {
+        if (this.store()) {
+            const questionAnnotations = this.currentQuestion()?.annotations;
+
+            if (!questionAnnotations?.length) {
+                const sectionsAnnotations = this.currentQuestionMarkingGuide()?.sections.map(section => {
+                    return {
+                        section: section.id,
+                        annotations: []
+                    }
+                })
+                this.currentQuestionSectionsAnnotations.set(sectionsAnnotations ?? [])
+                return
+            }
+
+            return untracked(() => {
+                const sectionsAnnotations = this.currentQuestionMarkingGuide()?.sections.map(section => {
+                    const sectionAnnotations = questionAnnotations.filter(ann => ann.question_section_id == section.id)
+                    return {
+                        section: section.id,
+                        annotations: sectionAnnotations
+                    }
+                })
+
+                this.currentQuestionSectionsAnnotations.set(sectionsAnnotations ?? [])
+            })
+        }
+    })
+
+    questionsGradedStatusTracker = effect(() => {
+        if (this.store()) {
+            return untracked(() => {
+                const questionsGradedStatus = this.store().questions.map((q, index) => {
+                    const sectionsUngraded = this.store().markingGuide?.questions[index]?.sections.map(s => {
+
+                        const sectionsAnnotations = this.store().markingGuide?.questions[index]?.sections.map(section => {
+                            const sectionAnnotations = q.annotations.filter(ann => ann.question_section_id == section.id)
+                            return {
+                                section: section.id,
+                                annotations: sectionAnnotations
+                            }
+                        })
+
+                        const section = sectionsAnnotations?.find(section => section.section == s.id)
+                        const unversionedAnnotations = section?.annotations?.filter(ann => !ann.identity.versioned)
+
+                        if (!unversionedAnnotations?.length && !s.not_attempted) {
+                            return s
+                        }
+
+                        return []
+                    }).flat() ?? []
+
+                    return {
+                        questionId: q.item.id,
+                        questionIndex: index,
+                        sectionsUngraded,
+                        status: !sectionsUngraded?.length
+                    }
+                })
+
+                this.questionsGradedStatus.set(questionsGradedStatus)
+            })
+        }
+    })
+
+    allQuestionsSectionsGraded = computed(() => {
+        return this.questionsGradedStatus().every(q => q.status)
+    })
+
+    questionsPagesGradedTracker = effect(() => {
+        if (this.store()) {
+            return untracked(() => {
+                const questionsGradedStatus = this.store().questions.map((q, index) => {
+                    const ungradedPages = q?.pages.filter(p => !p.blank).map(p => {
+                        const questionAnnnotations = q.annotations?.filter(ann => ann.page == p.page)
+                        const unversionedAnnotations = questionAnnnotations?.filter(ann => !ann.identity.versioned)
+
+                        if (!unversionedAnnotations?.length) {
+                            return p
+                        }
+
+                        return []
+                    }).flat() ?? []
+
+                    return {
+                        questionId: q.item.id,
+                        questionIndex: index,
+                        ungradedPages,
+                        status: !ungradedPages?.length
+                    }
+                })
+
+                this.questionsPagesStatus.set(questionsGradedStatus)
+            })
+        }
+    })
+
+    allQuestionsPagesGraded = computed(() => {
+        return this.questionsPagesStatus().every(q => q.status)
+    })
+
+
     onValidAnnotationToApply = effect(() => {
         const annotationToApply = this.annotationToApply()
-        if (!annotationToApply) {
-            return
-        }
+        if (!annotationToApply) { return }
 
-        const valid = this.validateAnnotationToApply(annotationToApply)
-        if (!valid) {
-            return
-        }
-
-        this.applySectionScore()
-        this.updateQuestionGradingStatus()
+        untracked(() => {
+            const valid = this.validateAnnotationToApply(annotationToApply)
+            if (valid) {
+                this.applySectionScore()
+                this.updateQuestionGradingStatus()
+            }
+        });
     })
 
     validateAnnotationToApply(annotationToApply: AnnotationToApply) {
@@ -133,7 +218,7 @@ export class GradingService {
             return false
         }
 
-        if (ann.section.id !== ann.score.question_section_id) {
+        if (ann.section.id !== ann.score.question_section_id && ann.score.boundary !== SchemeScoreBoundary.GENERAL) {
             this._toast.error('This score cannot be applied to this section', { position: 'bottom-center' })
             return false
         }
@@ -163,13 +248,13 @@ export class GradingService {
             return
         }
 
-        const question = this.store().currentQuestion
+        const question = this.currentQuestion()
         if (!question) {
             return
         }
 
         const identity = new AnnotationIdentity()
-        identity.questionId = question.question.item.id
+        identity.questionId = question.item.id
         identity.sectionId = ann.section!.id
         identity.scoreId = ann.score!.id
         identity.scoreUsage = ann.score!.usage + 1
@@ -178,167 +263,191 @@ export class GradingService {
         identity.versioned = false
         identity.applied = true
         identity.highlight = false
-        identity.label = this.getAnnotationLabelType(ann.score!)
+        identity.shape = this.getAnnotationShape(ann.score!, ann.shape)
 
         const annotation = new QuestionAnnotation()
         annotation.identity = identity
         annotation.position = ann.position
 
-        // todo: fix when drawing store is implemented
         annotation.page = this.currentPage()
 
         annotation.score = ann.gradeScore
         annotation.markers_discretion = ann.score!.marker_discretion
-        // todo: When fixing versioning, after an annotation has been versioned, also update the comment:(JSON.stringify(identity))
         annotation.comment = JSON.stringify(identity)
         annotation.score_id = ann.score!.id
         annotation.mark_category = ann.score!.mark_category
         annotation.mark_type_id = ann.score!.mark_type_id
         annotation.name = ann.score!.name
         annotation.boundary = ann.score!.boundary
-        annotation.question_section_id = ann.score!.question_section_id
-        annotation.item_id = question.question.item.id
-        annotation.code = ann.score!.code
 
-        // increase the usage of the score and update the store
-        this.updateScoreUsage(ann.score!)
+        const currentSection = this.currentQuestionMarkingGuide()?.sections[this.store().questionCurrentSectionIndex]
+        annotation.question_section_id = ann.score!.question_section_id ?? currentSection?.id
+        annotation.item_id = question.item.id
+        annotation.code = ann.score!.code
 
         const questionAnnotations = this.store().questions[this.currentQuestionIndex()].annotations
         questionAnnotations?.push(annotation)
 
+        const questions = this.store().questions
+        questions[this.currentQuestionIndex()].annotations = questionAnnotations
 
-        // update this current question in the store
-        this._store.updateStore({
-            currentQuestion: {
-                ...this.store().currentQuestion,
-                question: {
-                    ...this.store().currentQuestion?.question,
-                    annotations: questionAnnotations
-                }
-            }
-        })
+        this._store.updateStore({ questions })
 
         this.updateGradingSummary()
+        this.setQuestionScoreUsage()
 
         const annotationToApply = new AnnotationToApply()
         this.annotationToApply.set({ ...annotationToApply, section: ann.section })
     }
 
-
-    getAnnotationLabelType(score: SchemeQuestionSectionScoreScoreDB) {
+    getAnnotationShape(score: SchemeQuestionSectionScoreScoreDB, shape: AnnotationScoreShape) {
         if (score.mark_category === 'SCORE') {
-            return 'CORRECT'
+            return shape.correct ?? AnnotationShape.CHECK
         }
         if (score.mark_category === 'PENALTY') {
-            return 'PENALTY'
+            return shape.penalty ?? AnnotationShape.X
         }
         if (score.mark_category === 'VIOLATION') {
-            return 'VIOLATION'
+            return shape.violation ?? AnnotationShape.BAN
         }
-        return 'NONE'
+
+        return AnnotationShape.NONE
     }
 
-    updateScoreUsage(score: SchemeQuestionSectionScoreScoreDB, subtract = false) {
-        if (score.mark_category === 'SCORE') {
-            const appliedScore = this.store().currentQuestion?.sectionCorrectScores?.find((s) => s.id === score.id)
-            if (!appliedScore) {
-                return
-            }
-
-            this._store.updateStore({
-                currentQuestion: {
-                    ...this.store().currentQuestion,
-                    sectionCorrectScores: this.store().currentQuestion?.sectionCorrectScores?.map((s) => {
-                        if (s.id === score.id) {
-                            return { ...s, usage: subtract ? s.usage - 1 : s.usage + 1 }
-                        }
-                        return s
-                    })
-                }
-            })
-        } else if (score.mark_category === 'PENALTY') {
-            const appliedScore = this.store().currentQuestion?.sectionPenaltyScores?.find((s) => s.id === score.id)
-            if (!appliedScore) {
-                return
-            }
-
-            this._store.updateStore({
-                currentQuestion: {
-                    ...this.store().currentQuestion,
-                    sectionPenaltyScores: this.store().currentQuestion?.sectionPenaltyScores?.map((s) => {
-                        if (s.id === score.id) {
-                            return { ...s, usage: subtract ? s.usage - 1 : s.usage + 1 }
-                        }
-                        return s
-                    })
-                }
-            })
-        } else if (score.mark_category === 'VIOLATION') {
-            const appliedScore = this.store().currentQuestion?.sectionViolationScores?.find((s) => s.id === score.id)
-            if (!appliedScore) {
-                return
-            }
-
-            this._store.updateStore({
-                currentQuestion: {
-                    ...this.store().currentQuestion,
-                    sectionViolationScores: this.store().currentQuestion?.sectionViolationScores?.map((s) => {
-                        if (s.id === score.id) {
-                            return { ...s, usage: subtract ? s.usage - 1 : s.usage + 1 }
-                        }
-                        return s
-                    })
-                }
-            })
-        }
-    }
-
-    formatAndSaveMarkginGudeResponse(res: SchemePageData) {
-        res.questions = res.questions.map(q => ({
-            ...q,
-            sections: q?.sections?.map(s => ({
-                ...s,
-                scores_correct: s?.scores_correct?.map(score => ({
-                    ...score,
-                    usage: 0
-                })),
-                scores_penalty: s?.scores_penalty?.map(score => ({
-                    ...score,
-                    usage: 0
-                })),
-                scores_violation: s?.scores_violation?.map(score => ({
-                    ...score,
-                    usage: 0
+    formatAndSaveMarkginGudeResponse(res: SchemePageData): SchemePageData {
+        res.questions = res.questions.map(q => {
+            return {
+                ...q,
+                sections: q?.sections?.map(s => ({
+                    ...s,
+                    not_attempted: false
                 }))
-            }))
+            }
+        })
+
+        return res
+    }
+
+    setQuestionScoreUsage(res?: SchemePageData) {
+        const markingGuide = res ?? this.store().markingGuide
+        if (!markingGuide) {
+            return
+        }
+
+
+        markingGuide.questions = markingGuide?.questions.map(q => {
+            return {
+                ...q,
+                sections: q?.sections?.map(s => ({
+                    ...s,
+                    scores_correct: s?.scores_correct?.map(score => ({
+                        ...score,
+                        usage: this.getScoreUsage(q, score)
+                    })),
+                    scores_penalty: s?.scores_penalty?.map(score => ({
+                        ...score,
+                        usage: this.getScoreUsage(q, score)
+                    })),
+                    scores_violation: s?.scores_violation?.map(score => ({
+                        ...score,
+                        usage: this.getScoreUsage(q, score)
+                    }))
+                }))
+            }
+        })
+
+        markingGuide.general_scores_correct = markingGuide.general_scores_correct?.map(score => ({
+            ...score,
+            usage: this.getGeneralScoreUsage(score)
         }))
 
-        this._store.updateStore({ markingGuide: res })
+        markingGuide.general_scores_penalty = markingGuide.general_scores_penalty?.map(score => ({
+            ...score,
+            usage: this.getGeneralScoreUsage(score)
+        }))
+
+        markingGuide.general_scores_violation = markingGuide.general_scores_violation?.map(score => ({
+            ...score,
+            usage: this.getGeneralScoreUsage(score)
+        }))
+
+        this._store.updateStore({ markingGuide })
     }
 
-    formAndSaveQuestions(res: ParticipantSectionTranscript[]) {
+    getGeneralScoreUsage(score: GeneralScoreDB) {
+        const annotations = this.store().questions.flatMap(q => q.annotations)
+        const usage = annotations?.filter((ann) => ann.mark_category === this.markTypes().SCORE && ann.score_id === score.id)
+        if (!usage?.length) {
+            return 0
+        }
+
+        return usage.length
+    }
+
+    getScoreUsage(question: SchemeQuestionsTransformed, score: SchemeQuestionSectionScoreScoreDB) {
+        const q = this.store().questions.find(q => q.item.id === question.item_id)
+        if (!q) {
+            return 0
+        }
+
+        const annotations = q.annotations.filter(ann => !ann.identity.versioned)
+
+        if (score.mark_category === 'SCORE') {
+            const usage = annotations?.filter((ann) => ann.mark_category === this.markTypes().SCORE && ann.score_id === score.id && ann.item_id === question.item_id)
+            if (!usage?.length) {
+                return 0
+            }
+
+            return usage.length
+        } else if (score.mark_category === 'PENALTY') {
+            const usage = annotations?.filter((ann) => ann.mark_category === this.markTypes().PENALTY && ann.score_id === score.id && ann.item_id === question.item_id)
+            if (!usage?.length) {
+                return 0
+            }
+            return usage.length
+        } else if (score.mark_category === 'VIOLATION') {
+            const usage = annotations?.filter((ann) => ann.mark_category === this.markTypes().VIOLATION && ann.score_id === score.id && ann.item_id === question.item_id)
+            if (!usage?.length) {
+                return 0
+            }
+            return usage.length
+        } else {
+            return 0
+        }
+    }
+
+    formatAndSaveQuestions(res: ParticipantSectionTranscript[]): ParticipantSectionTranscript[] {
         const questions = res.map(q => {
-            let jsonQuestionResponse;
-            const pages: QuestionPage[] = []
+            const pages: QuestionPage[] = [];
+
+            const createPage = (index: number, questionId: string, savedPage?: QuestionPage): QuestionPage => {
+                const page = new QuestionPage();
+                if (savedPage) {
+                    page.allowNavigation = this.useConstraints() ? savedPage.allowNavigation : true;
+                    page.page = savedPage.page;
+                    page.questionId = savedPage.questionId;
+                    page.blank = savedPage.blank;
+                } else {
+                    page.allowNavigation = this.useConstraints() ? index === 0 : true;
+                    page.page = index;
+                    page.questionId = questionId;
+                    page.blank = false;
+                }
+                return page;
+            };
 
             if (q.item_score.un_graded_response.length) {
-                jsonQuestionResponse = JSON.parse(q.item_score.un_graded_response[0]) as DrawingStore
+                const jsonResponse = JSON.parse(q.item_score.un_graded_response[0]) as DrawingStore;
+                const savedPages = q.item_score.graded
+                    ? JSON.parse(q.item_score.manual_grade_remark || JSON.stringify({ pages: [] })) as { pages: QuestionPage[] }
+                    : null;
 
-                jsonQuestionResponse.pages.forEach((p, index) => {
-                    const page = new QuestionPage()
-                    page.allowNavigation = index == 0 ? true : false
-                    page.page = index
-                    page.questionId = q.item.id
-
-                    pages.push(page)
-                })
+                jsonResponse.pages.forEach((_, index) => {
+                    const savedPage = savedPages?.pages.find(p => p.questionId === q.item.id);
+                    pages.push(createPage(index, q.item.id, savedPage));
+                });
             } else {
-                const page = new QuestionPage()
-                page.allowNavigation = true
-                page.page = 0
-                page.questionId = q.item.id
-
-                pages.push(page)
+                pages.push(createPage(0, q.item.id));
             }
 
             return {
@@ -350,15 +459,14 @@ export class GradingService {
                     graded: false,
                     blanks: 0
                 },
-                pages //todo: When saving, try to incorporate this values in the grading payload
-            }
-        })
+                pages
+            };
+        });
 
-        this._store.updateStore({ questions })
+        return questions
     }
 
     updateGradingSummary() {
-        // Todo: calculate the question grade summary correctly
         const summary: { id: string, summary: GradeSummary }[] = []
 
         this.store().questions.forEach(question => {
@@ -425,11 +533,6 @@ export class GradingService {
     }
 
     unHighlightCurrentQuestionnnotations() {
-        const currentQuestion = this.store().currentQuestion
-        if (!currentQuestion) {
-            return
-        }
-
         const questions = this.store().questions
         const question = questions[this.currentQuestionIndex()]
 
@@ -441,11 +544,6 @@ export class GradingService {
     }
 
     highlightAnnotation(annotation: QuestionAnnotation) {
-        const currentQuestion = this.store().currentQuestion
-        if (!currentQuestion) {
-            return
-        }
-
         this.unHighlightCurrentQuestionnnotations()
 
         const questions = this.store().questions
@@ -465,16 +563,11 @@ export class GradingService {
             return
         }
 
-        const ann = this.currentQuestion()?.question.annotations.find(ann => ann.identity.highlight)
+        const ann = this.currentQuestion().annotations.find(ann => ann.identity.highlight)
         return ann
     })
 
     versionAnnotation() {
-        const currentQuestion = this.store().currentQuestion
-        if (!currentQuestion) {
-            return
-        }
-
         if (!this.highlightedAnnotation()) {
             return
         }
@@ -484,25 +577,25 @@ export class GradingService {
         question.annotations.forEach(ann => {
             if (ann.identity.highlight) {
                 ann.identity.versioned = true
+
+                const json = JSON.parse(ann.comment)
+                json.versioned = true
+                ann.comment = JSON.stringify(json)
             }
         })
 
         this._toast.success('Annotation deleted successfully')
         this._store.updateStore({ questions })
+        this.setQuestionScoreUsage()
         this.updateGradingSummary()
     }
 
     currentPageIsBlank = computed(() => {
-        const page = this.store().questions[this.currentQuestionIndex()].pages.find((page) => page.page === this.currentPage())
+        const page = this.store().questions[this.currentQuestionIndex()]?.pages?.find((page) => page.page === this.currentPage())
         return page?.blank
     })
 
     markPageAsBlank() {
-        const currentQuestion = this.store().currentQuestion
-        if (!currentQuestion) {
-            return
-        }
-
         const questions = this.store().questions
         const question = questions[this.currentQuestionIndex()]
 
@@ -518,18 +611,13 @@ export class GradingService {
         this._store.updateStore({ questions })
 
         this._toast.success('Page marked as blank', { position: 'bottom-center' })
+        this.setQuestionScoreUsage()
         this.updateGradingSummary()
         this.updateQuestionGradingStatus()
-        this.sectionIndexChangeHandler()
         this.allowPageNavigation()
     }
 
     unMarkPageAsBlank() {
-        const currentQuestion = this.store().currentQuestion
-        if (!currentQuestion) {
-            return
-        }
-
         const questions = this.store().questions
         const question = questions[this.currentQuestionIndex()]
 
@@ -542,16 +630,12 @@ export class GradingService {
         this._store.updateStore({ questions })
 
         this._toast.success('Page unmarked as blank', { position: 'bottom-center' })
+        this.setQuestionScoreUsage()
         this.updateGradingSummary()
         this.updateQuestionGradingStatus()
     }
 
     undoLastScore() {
-        const currentQuestion = this.store().currentQuestion
-        if (!currentQuestion) {
-            return
-        }
-
         this.unHighlightCurrentQuestionnnotations()
 
         const questions = this.store().questions
@@ -573,22 +657,9 @@ export class GradingService {
         question.annotations = question.annotations.filter((ann) => ann.identity.id !== itemToRemove?.identity.id)
 
         this._store.updateStore({ questions })
+
         this._toast.success('Score undone successfully', { position: 'bottom-center' })
-
-        let score;
-        if (itemToRemove.mark_category == this.markTypes().SCORE) {
-            score = this.currentQuestion()?.sectionCorrectScores.find(s => s.id == itemToRemove.score_id)
-        } else if (itemToRemove.mark_category == this.markTypes().PENALTY) {
-            score = this.currentQuestion()?.sectionPenaltyScores.find(s => s.id == itemToRemove.score_id)
-        } else if (itemToRemove.mark_category == this.markTypes().VIOLATION) {
-            score = this.currentQuestion()?.sectionViolationScores.find(s => s.id == itemToRemove.score_id)
-        }
-
-        if (!score) {
-            return
-        }
-
-        this.updateScoreUsage(score, true)
+        this.setQuestionScoreUsage()
         this.updateGradingSummary()
         this.updateQuestionGradingStatus()
     }
@@ -605,5 +676,88 @@ export class GradingService {
 
         this._store.updateStore({ questions })
         this._toast.success('Page navigation allowed', { position: 'bottom-center' });
+    }
+
+    markCurrentSectionAsNotAttempted() {
+        const markingGuide = this.store().markingGuide
+        markingGuide.questions = markingGuide.questions.map(q => {
+            return {
+                ...q,
+                sections: q?.sections?.map(s => {
+                    if (s.id === this.currentQuestionMarkingGuide()?.sections[this.store().questionCurrentSectionIndex].id && q.item_id === this.currentQuestion().item.id) {
+                        return {
+                            ...s,
+                            not_attempted: true
+                        }
+                    }
+                    return s
+                })
+            }
+        })
+
+        const questions = this.store().questions
+        const question = questions[this.currentQuestionIndex()]
+
+        question.annotations.forEach((ann) => {
+            if (ann.question_section_id === this.currentQuestionMarkingGuide()?.sections[this.store().questionCurrentSectionIndex].id) {
+                ann.identity.versioned = true
+            }
+        })
+
+        this._store.updateStore({ markingGuide, questions })
+
+        this._toast.success('Section unmarked as not attempted', { position: 'bottom-center' })
+        this.setQuestionScoreUsage()
+        this.updateGradingSummary()
+        this.updateQuestionGradingStatus()
+    }
+
+    undoMarkCurrentSectionAsNotAttempted() {
+        const markingGuide = this.store().markingGuide
+        markingGuide.questions = markingGuide.questions.map(q => {
+            return {
+                ...q,
+                sections: q?.sections?.map(s => {
+                    if (s.id === this.currentQuestionMarkingGuide()?.sections[this.store().questionCurrentSectionIndex].id && q.item_id === this.currentQuestion().item.id) {
+                        return {
+                            ...s,
+                            not_attempted: false
+                        }
+                    }
+                    return s
+                })
+            }
+        })
+
+        this._store.updateStore({ markingGuide })
+
+        this._toast.success('Section unmarked as not attempted', { position: 'bottom-center' })
+        this.setQuestionScoreUsage()
+        this.updateGradingSummary()
+        this.updateQuestionGradingStatus()
+    }
+
+    formatGradingPayload() {
+        const payload: Grading[] = []
+
+        this.store().questions.forEach((question, index) => {
+            const grading = new Grading()
+
+            const questionGradeSummary = this.gradeSummary().find((summary) => summary.id === question.item.id)
+            if (!questionGradeSummary) {
+                this._toast.error(`You have no score to submit for question ${index + 1}`, { position: 'bottom-center' })
+                return
+            }
+
+            grading.annotations = question.annotations
+            grading.include_penalty = question.item_score.has_penalty
+            grading.item_id = question.item.id
+            grading.score = questionGradeSummary.summary.score
+            grading.remark = JSON.stringify({ pages: question.pages })
+
+            payload.push(grading)
+        })
+
+        return payload
     }
 }   

@@ -30,11 +30,11 @@
   </button>
 
     <div class="mb-8 p-6 select-none">
-        @if(currentQuestion()?.question?.item?.passageStimulus) {
-            <div [innerHTML]="currentQuestion()?.question?.item?.passageStimulus"></div>
+        @if(currentQuestion().item.passageStimulus) {
+            <div [innerHTML]="currentQuestion().item.passageStimulus"></div>
         }
-        @if(currentQuestion()?.question?.item?.stimulus) {
-            <div [innerHTML]="currentQuestion()?.question?.item?.stimulus" [class.mt-5]="currentQuestion()?.question?.item?.passageStimulus"></div>
+        @if(currentQuestion().item.stimulus) {
+            <div [innerHTML]="currentQuestion().item.stimulus" [class.mt-5]="currentQuestion().item.passageStimulus"></div>
         }
     </div>
 </p-dialog>
@@ -50,20 +50,20 @@
                 </p-accordion-content>
             </p-accordion-panel>
          }
-        @if(currentQuestion()?.gradingGuide?.marking_guide) {
+        @if(currentQuestionMarkingGuide()?.marking_guide) {
             <p-accordion-panel value="1">
                 <p-accordion-header>Question Marking Instruction</p-accordion-header>
                 <p-accordion-content>
-                    <div [innerHTML]="currentQuestion()?.gradingGuide?.marking_guide"></div>
+                    <div [innerHTML]="currentQuestionMarkingGuide()?.marking_guide"></div>
                 </p-accordion-content>
             </p-accordion-panel>
         }
-        @if(currentQuestion()?.gradingGuide?.sections) {
+        @if(currentQuestionMarkingGuide()?.sections) {
             <p-accordion-panel value="2">
                     <p-accordion-header>QuestionMarking scheme</p-accordion-header>
                     <p-accordion-content>
                         <p-accordion >
-                            @for(item of currentQuestion()?.gradingGuide?.sections; track item; let i = $index) {
+                            @for(item of currentQuestionMarkingGuide()?.sections; track item.id; let i = $index) {
                             <p-accordion-panel value="{{i}}">
                                 <p-accordion-header>{{ item.name }}</p-accordion-header>
                                 <p-accordion-content>

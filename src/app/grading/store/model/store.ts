@@ -1,17 +1,11 @@
-import { SchemePageData, ParticipantSectionTranscript, Participant_Result_Data_DTO, SchemeQuestionsTransformed, SchemeQuestionSectionScoreScoreDB } from "../../model/types"
+import { SchemePageData, ParticipantSectionTranscript, Participant_Result_Data_DTO, gradingInformation } from "../../model/types"
 
 export class StoreDTO {
+    gradingInfo: gradingInformation
     markingGuide: SchemePageData
     questions: ParticipantSectionTranscript[]
     candidate: Participant_Result_Data_DTO
     currentQuestionIndex: number
-    currentQuestion?: {
-        question: ParticipantSectionTranscript
-        gradingGuide: SchemeQuestionsTransformed
-        sectionCorrectScores: SchemeQuestionSectionScoreScoreDB[]
-        sectionPenaltyScores: SchemeQuestionSectionScoreScoreDB[]
-        sectionViolationScores: SchemeQuestionSectionScoreScoreDB[]
-    }
     questionCurrentSectionIndex: number
     canvas: {
         type: 'DEFAULT' | 'OVERLAY'

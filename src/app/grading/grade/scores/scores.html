@@ -1,128 +1,134 @@
+<ng-template #penalScoreShapes>
+    <div class="flex items-center gap-2">
+        <button [class.bg-amber-500!]="selectedPenaltyShape() === annotationShapes().X" (click)="selectedPenaltyShape.set(annotationShapes().X)" pTooltip="X" tooltipPosition="top" class="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition cursor-pointer disabled:opacity-70">
+            <svg [class.stroke-white!]="selectedPenaltyShape() === annotationShapes().X" class="mx-auto stroke-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085" />
+            </svg>
+        </button>
+        <button [class.bg-amber-500!]="selectedPenaltyShape() === annotationShapes().RING" (click)="selectedPenaltyShape.set(annotationShapes().RING)" pTooltip="Ring" tooltipPosition="top" class="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition cursor-pointer disabled:opacity-70">
+            <span [class.border-white!]="selectedPenaltyShape() === annotationShapes().RING" class="rounded-full size-5 border-3 border-amber-500"></span>
+        </button>
+        <button [class.bg-amber-500!]="selectedPenaltyShape() === annotationShapes().UNDERLINE" (click)="selectedPenaltyShape.set(annotationShapes().UNDERLINE)" pTooltip="Underline" tooltipPosition="top" class="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition cursor-pointer disabled:opacity-70">
+            <span [class.bg-white!]="selectedPenaltyShape() === annotationShapes().UNDERLINE" class="w-6 h-1 bg-amber-500"></span>
+        </button>
+    </div>
+</ng-template>
+
+<ng-template #scoreBadge let-item="item" let-color="color" let-isNegative="isNegative">
+    @if(item.max_occurrence > item.usage) {
+        @if(item.marker_discretion) {
+            <div (click)="input.toggle($event)" class="relative group" [pTooltip]="item.name" tooltipPosition="top">
+                <div class="px-2 py-2 text-sm font-bold rounded-lg bg-white border border-transparent transition flex gap-1 items-center"
+                     [ngClass]="
+                     color === 'green' ? 'text-green-600 group-hover:bg-green-500 group-hover:text-white' : 
+                     color === 'amber' ? 'text-amber-600 group-hover:bg-amber-500 group-hover:text-white' : 'text-red-600 group-hover:bg-red-500 group-hover:text-white'"
+                >
+                    <span>{{ item.code }}{{ item.max_score }}</span>
+                    <span class="bg-red-600 text-white group-hover:bg-white transition border border-transparent text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center"
+                          [ngClass]="color === 'green' ? 'group-hover:text-green-500 group-hover:border-green-500' : color === 'amber' ? 'group-hover:text-amber-500 group-hover:border-amber-500' : 'group-hover:text-red-500 group-hover:border-red-500'">
+                        {{ item.max_occurrence - item.usage }}
+                    </span>
+                </div>
+            </div>
+
+            <p-popover #input>
+                <div class="p-1 form-group">
+                    @if(item.mark_category == markTypes().PENALTY) {
+                        <ng-container *ngTemplateOutlet="penalScoreShapes"></ng-container>
+                    }
+                    <label>Enter score (Max: {{ isNegative ? '-' : '' }}{{ item.max_score }}Mks)</label>
+                    <input #inputScore (input)="btn.disabled = +(inputScore.value) > item.max_score" type="text" class="form-control focus:border-gray-400!">
+                    <button #btn [disabled]="!inputScore.value" (click)="applySectionScore(+(inputScore.value), item); input.hide()" class="btn fill w-full!">Apply</button>
+                </div>
+            </p-popover>
+        } @else {
+            <div (click)="scores.toggle($event)"  class="relative group" [pTooltip]="item.name" tooltipPosition="top">
+                <div class="px-2 py-2 text-sm font-bold rounded-lg bg-white border border-transparent transition flex gap-1 items-center"
+                     [ngClass]="
+                     color === 'green' ? 'text-green-500 group-hover:bg-green-500 group-hover:text-white' : 
+                     color === 'amber' ? 'text-amber-500 group-hover:bg-amber-500 group-hover:text-white' : 'text-red-500 group-hover:bg-red-500 group-hover:text-white'"
+                     >
+                    <span>{{ item.code }}{{ item.max_score }}</span>
+                    <span class="text-white group-hover:bg-white transition border border-transparent text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center"
+                          [ngClass]="color === 'green' ? 'bg-green-500 group-hover:text-green-500 group-hover:border-green-500' : color === 'amber' ? 'bg-amber-500 group-hover:text-amber-500 group-hover:border-amber-500' : 'bg-red-500 group-hover:text-red-500 group-hover:border-red-500'">
+                        {{ item.max_occurrence - item.usage }}
+                    </span>
+                </div>
+            </div>
+
+            <p-popover #scores>
+                <div class="p-1 form-group">
+                    @if(item.mark_category == markTypes().PENALTY) {
+                        <ng-container *ngTemplateOutlet="penalScoreShapes"></ng-container>
+                    }
+
+                    <label>Select score (Max: {{ isNegative ? '-' : '' }}{{ item.max_score }}Mks)</label>
+                    <button #score (click)="applySectionScore(item.max_score, item); scores.hide()" class="btn fill w-full!">{{ item.max_score }} Mks</button>
+                    <button #zeroScore (click)="applySectionScore(0, item); scores.hide()" class="btn fill bg-zinc-600! w-full!">0 Mks</button>
+                </div>
+            </p-popover>
+        }
+    }
+</ng-template>
+
 <div class="bg-white rounded-2xl cursor-pointer select-none">
     <div class="space-y-1.5">
-        @if(correctScores()?.length) {
+        @if(correctScores().length || generalCorrectScores().length) {
             @if(totalCorrectMaxOccurrences() > totalCorrectUsedScores()) {
-                <div class="p-3 rounded-2xl bg-gray-100">
+                <div class="p-3 rounded-2xl bg-gray-200">
                     <div class="text-xs font-bold mb-3 uppercase">Scores</div>
-                    <div class="flex flex-wrap gap-2.5">
-                        @for(item of correctScores(); track item) {
-                            @if(item.max_occurrence > item.usage) {
-                                @if(item.marker_discretion) {
-                                    <div (click)="input.toggle($event)" class="relative group">
-                                        <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-red-500 border border-transparent group-hover:bg-green-500 group-hover:text-white transition flex gap-1 items-center">
-                                            <span>{{ item.code }}{{ item.max_score }}</span>
-                                            <span class="bg-green-500 text-white group-hover:bg-white group-hover:text-green-500 transition border border-transparent group-hover:border-green-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                                {{ item.max_occurrence - item.usage }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                     <p-popover #input>
-                                        <div class="p-1 form-group">
-                                            <label>Enter score (Max: {{ item.max_score }}Mks)</label>
-                                            <input #inputScore (input)="btn.disabled = +(inputScore.value) > item.max_score" type="text" class="form-control focus:border-gray-400!">
-                                            <button #btn [disabled]="!inputScore.value" (click)="applySectionScore(+(inputScore.value), item); input.hide()" class="btn fill w-full!">Apply</button>
-                                        </div>
-                                    </p-popover>
-                                } @else {
-                                    <div (click)="applySectionScore(item.max_score, item)" class="relative group">
-                                        <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-green-500 border border-transparent group-hover:bg-green-500 group-hover:text-white transition flex gap-1 items-center">
-                                            <span>{{ item.code }}{{ item.max_score }}</span>
-                                            <span class="bg-green-500 text-white group-hover:bg-white group-hover:text-green-500 transition border border-transparent group-hover:border-green-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                                {{ item.max_occurrence - item.usage }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                }
+                    <div class="flex flex-col gap-2">
+                        <div class="flex flex-wrap gap-1">
+                            @for(item of generalCorrectScores(); track item.id) {
+                                <ng-container *ngTemplateOutlet="scoreBadge; context: { item: item, color: 'green', isNegative: false }" />
                             }
-                        }
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            @for(item of correctScores(); track item.id) {
+                                <ng-container *ngTemplateOutlet="scoreBadge; context: { item: item, color: 'green', isNegative: false }" />
+                            }
+                        </div>
                     </div>
                 </div>
             }
         }
 
-        @if(penaltyScores()?.length) {
+        @if(penaltyScores().length || generalPenaltyScores().length) {
             @if(totalPenaltyMaxOccurrences() > totalPenaltyUsedScores()) {
-                <div class="p-3 rounded-2xl bg-gray-100">
+                <div class="p-3 rounded-2xl bg-gray-200">
                     <div class="text-xs font-bold mb-3 uppercase">Penalty</div>
-                    <div class="flex flex-wrap gap-1.5">
-                        @for(item of penaltyScores(); track item) {
-                            @if(item.max_occurrence > item.usage) {
-                                @if(item.marker_discretion) {
-                                    <div (click)="input.toggle($event)" class="relative group">
-                                        @if(item.marker_discretion) {
-                                            <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-red-500 border border-transparent group-hover:bg-amber-500 group-hover:text-white transition  flex gap-1 items-center">
-                                               <span>{{ item.code }}{{ item.max_score }}</span>
-                                                <span class="bg-amber-500 text-white group-hover:bg-white group-hover:text-amber-500 transition border border-transparent group-hover:border-amber-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                                    {{ item.max_occurrence - item.usage }}
-                                                </span>
-                                            </div>
-                                        }
-                                    </div>
-
-                                    <p-popover #input>
-                                        <div class="p-1 form-group">
-                                            <label>Enter score (Max: -{{ item.max_score }}Mks)</label>
-                                            <input #inputScore (input)="btn.disabled = +(inputScore.value) > item.max_score" type="text" class="form-control focus:border-gray-400!">
-                                            <button #btn [disabled]="!inputScore.value" (click)="applySectionScore(+(inputScore.value), item); input.hide()" class="btn fill w-full!">Apply</button>
-                                        </div>
-                                    </p-popover>
-                                } @else { 
-                                    <div (click)="applySectionScore(item.max_score, item)" class="relative group">
-                                        <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-amber-500 border border-transparent group-hover:bg-amber-500 group-hover:text-white transition  flex gap-1 items-center">
-                                            <span>{{ item.code }}{{ item.max_score }}</span>
-                                            <span class="bg-amber-500 text-white group-hover:bg-white group-hover:text-amber-500 transition border border-transparent group-hover:border-amber-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                                {{ item.max_occurrence - item.usage }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                }
+                    <div class="flex flex-col gap-2">
+                        <div class="flex flex-wrap gap-1">
+                            @for(item of generalPenaltyScores(); track item.id) {
+                                <ng-container *ngTemplateOutlet="scoreBadge; context: { item: item, color: 'amber', isNegative: true }" />
                             }
-                        }
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            @for(item of penaltyScores(); track item.id) {
+                                <ng-container *ngTemplateOutlet="scoreBadge; context: { item: item, color: 'amber', isNegative: true }" />
+                            }
+                        </div>
                     </div>
                 </div>
             }
         }
 
-        @if(violationScores()?.length) {
+        @if(violationScores().length || generalViolationScores().length) {
             @if(totalViolationMaxOccurrences() > totalViolationUsedScores()) {
-                <div class="p-3 rounded-2xl bg-gray-100"> 
+                <div class="p-3 rounded-2xl bg-gray-200"> 
                     <div class="text-xs font-bold mb-3 uppercase">Violation</div>
-                    <div class="flex flex-wrap gap-1.5">
-                        @for(item of violationScores(); track item) {
-                            @if(item.max_occurrence > item.usage) {
-                                @if(item.marker_discretion) {
-                                    <div (click)="input.toggle($event)" class="relative group">
-                                        @if(item.marker_discretion) {
-                                            <div class="px-3 py-2 text-sm font-bold rounded-lg bg-red-500 text-white border border-transparent group-hover:bg-red-500 group-hover:text-white transition flex gap-1 items-center">
-                                                <span>{{ item.code }}{{ item.max_score }}</span>
-                                                <span class="bg-white text-red-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                                    {{ item.max_occurrence - item.usage }}
-                                                </span>
-                                            </div>
-                                        }
-                                    </div>
-
-                                    <p-popover #input>
-                                        <div class="p-1 form-group">
-                                            <label>Enter score (Max: -{{ item.max_score }}Mks)</label>
-                                            <input #inputScore (input)="btn.disabled = +(inputScore.value) > item.max_score" type="text" class="form-control focus:border-gray-400!">
-                                            <button #btn [disabled]="!inputScore.value" (click)="applySectionScore(+(inputScore.value), item); input.hide()" class="btn fill w-full!">Apply</button>
-                                        </div>
-                                    </p-popover>
-                                } @else { 
-                                    <div (click)="applySectionScore(item.max_score, item)" class="relative group">
-                                        <div class="px-3 py-2 text-sm font-bold rounded-lg bg-white text-red-500 border border-transparent group-hover:bg-red-500 group-hover:text-white transition flex gap-1 items-center">
-                                           <span>{{ item.code }}{{ item.max_score }}</span>
-                                            <span class="bg-red-500 text-white group-hover:bg-white group-hover:text-red-500 transition border border-transparent group-hover:border-red-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                                {{ item.max_occurrence - item.usage }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                }
+                    <div class="flex flex-col gap-2">
+                        <div class="flex flex-wrap gap-1">
+                            @for(item of generalViolationScores(); track item.id) {
+                                <ng-container *ngTemplateOutlet="scoreBadge; context: { item: item, color: 'red', isNegative: true }" />
                             }
-                        }
-                    </div> 
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            @for(item of violationScores(); track item.id) {
+                                <ng-container *ngTemplateOutlet="scoreBadge; context: { item: item, color: 'red', isNegative: true }" />
+                            }
+                        </div> 
+                    </div>
                 </div>
             }
         }

@@ -2,8 +2,8 @@
     @for(item of currentPageAnnotations(); track item.identity.id) {
         <span 
             (click)="selectAnnotation(item, $event)" 
-            [style.top.px]="+item.position[1] - 25" 
-            [style.left.px]="+item.position[0] - 25" 
+            [style.left.px]="+item.position[0] - getAnnotationOffsetX(item)" 
+            [style.top.px]="+item.position[1] - getAnnotationOffsetY(item)" 
             class="flex flex-col justify-center gap-1 absolute select-none z-10 cursor-pointer border border-transparent rounded-md p-1" 
             [class.border-green-500!]="item.identity.highlight && !item.identity.versioned"
             [class.opacity-50!]="item.identity.versioned"
@@ -12,9 +12,15 @@
             @if(item.mark_category == markTypes().SCORE) {
                 <img src="check.png" alt="score icon" class="w-10 mx-auto">
             } @else if(item.mark_category == markTypes().PENALTY) {
-                <svg class="mx-auto stroke-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50" height="50" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085" />
-                </svg>
+                @if(item.identity.shape == annotationShapes().X) {
+                    <svg class="mx-auto stroke-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50" height="50" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085" />
+                    </svg>
+                } @else if (item.identity.shape == annotationShapes().RING) {
+                    <span class="rounded-full size-8 border-3 border-amber-500 mx-auto"></span>
+                } @else if (item.identity.shape == annotationShapes().UNDERLINE) {
+                    <span class="w-10 h-1 bg-amber-500 mx-auto"></span>
+                }
             } @else if(item.mark_category == markTypes().VIOLATION) {
                 <svg class="mx-auto w-10 h-10 text-red-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                     <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="m6 6 12 12m3-6a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
@@ -24,7 +30,7 @@
             @if(item.mark_category == markTypes().SCORE) {
                 <div class="text-base font-bold text-emerald-600">Q.{{ store().currentQuestionIndex + 1 }} | {{ item.score }}Mks </div>
             } @else if(item.mark_category == markTypes().PENALTY) {
-                <div class="text-base font-bold text-amber-600">Q.{{ store().currentQuestionIndex + 1 }} | -{{ item.score }}Mks </div>
+                <div class="text-base font-bold text-amber-600">Q.{{ store().currentQuestionIndex + 1 }} | {{ item.score }}Mks </div>
             } @else if(item.mark_category == markTypes().VIOLATION) {
                 <div class="text-base font-bold text-red-600">Q.{{ store().currentQuestionIndex + 1 }} | {{ item.score }}Mks </div>
             }

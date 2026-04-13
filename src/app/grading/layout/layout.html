@@ -1,0 +1,44 @@
+<div class="h-dvh overflow-hidden bg-linear-to-br from-gray-400 via-gray-100 to-gray-50 p-5">
+    <div class="grid grid-cols-1 lg:grid-cols-6 gap-5 h-full">
+        <div class="lg:col-span-4 h-full overflow-y-auto no-scrollbar">
+            <div class="mb-4 shrink-0 flex items-center justify-between">
+                <div class="flex items-center gap-2 bg-white/10 p-3 rounded-2xl backdrop-blur-3xl w-max">
+                    <div class="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                    </div>
+                    <span class="font-bold text-lg tracking-tight uppercase text-zinc-900">
+                        Dces
+                    </span>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <div class="w-9 h-9 flex items-center justify-center rounded-full bg-white/40 backdrop-blur-3xl hover:bg-white/50 transition cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#4a4a4a" fill="none" stroke="#4a4a4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15.5 18C15.5 19.933 13.933 21.5 12 21.5C10.067 21.5 8.5 19.933 8.5 18" />
+                            <path d="M19.2311 18H4.76887C3.79195 18 3 17.208 3 16.2311C3 15.762 3.18636 15.3121 3.51809 14.9803L4.12132 14.3771C4.68393 13.8145 5 13.0514 5 12.2558V9.5C5 5.63401 8.13401 2.5 12 2.5C15.866 2.5 19 5.634 19 9.5V12.2558C19 13.0514 19.3161 13.8145 19.8787 14.3771L20.4819 14.9803C20.8136 15.3121 21 15.762 21 16.2311C21 17.208 20.208 18 19.2311 18Z" />
+                        </svg>
+                    </div>
+                    <div class="w-9 h-9 flex items-center justify-center rounded-full bg-white/40 backdrop-blur-3xl hover:bg-white/50 transition cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18.7083 6C20.1334 7.59227 21 9.69494 21 12C21 13.1856 20.7708 14.3176 20.3542 15.3542M5.29168 6C3.86656 7.59227 3 9.69494 3 12C3 16.9706 7.02944 21 12 21C14.4853 21 16.7353 19.9926 18.364 18.364" />
+                            <path d="M3 3L21 21" />
+                            <path d="M12 3L12 7" />
+                        </svg>
+                    </div>
+                    <button (click)="startGrading($event)" class="btn fill">Start Grading</button>
+                </div>
+            </div>
+
+            <div class="flex-1">
+                <router-outlet></router-outlet>
+            </div>
+        </div>
+        <div class="lg:col-span-2 h-full min-h-0 overflow-hidden flex flex-col">
+            <div class="h-full min-h-0">
+                <app-user class="h-full flex flex-col gap-5 "></app-user>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,11 +1,26 @@
 import { Routes } from '@angular/router';
+import Layout from './grading/layout/layout';
 
 export const routes: Routes = [
-    { 
-        path: 'grading',
+    { path: '', redirectTo: 'app', pathMatch: 'full' },
+    {
+        path: 'app',
         children: [
-            { path: '', loadComponent: () => import('./grading/overview/overview')},
-            { path: 'grade/assessment/:assessmentId/section/:sectionId/participant/:participantId/scheme/:schemeId', loadComponent: () => import('./grading/grade/grade')}
+            {
+                path: '',
+                component: Layout,
+                children: [
+                    { path: '', redirectTo: 'overview', pathMatch: 'full' },
+                    { path: 'overview', loadComponent: () => import('./grading/overview/overview') },
+                    { path: 'booklets', loadComponent: () => import('./grading/booklets/booklets') }
+                ]
+            },
+            {
+                path: 'grade',
+                children: [
+                    { path: '', loadComponent: () => import('./grading/grade/grade') }
+                ]
+            }
         ]
     }
 ];

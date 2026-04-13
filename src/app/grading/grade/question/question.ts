@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { ParticipantSectionTranscript, QuestionAnnotation, SchemeMarkCategory, SchemeQuestionsTransformed } from '../../model/types';
 import { Store } from '../../store/store';
+import { GradingService } from '../../services/grading.service';
 
 @Component({
   selector: 'app-question',
@@ -10,13 +11,14 @@ import { Store } from '../../store/store';
 })
 export class Question {
   private _store = inject(Store)
+  private _gradingService = inject(GradingService)
 
   questionIndex = input.required<number>()
   store = computed(() => this._store.store())
   question = signal<ParticipantSectionTranscript | null>(null)
   questionGuide = signal<SchemeQuestionsTransformed | null>(null)
 
-  currentQuestion = computed(() => this.store().currentQuestion)
+  currentQuestion = computed(() => this._gradingService.currentQuestion())
   sectionsAnnotation = signal<{ section: string, annotations: QuestionAnnotation[] }[]>([])
   markTypes = signal(SchemeMarkCategory)
 
@@ -41,29 +43,7 @@ export class Question {
         })
 
         this.sectionsAnnotation.set(sectionsAnnotations ?? [])
-
-        this.hideAnnotationsHighlight()
       }
     })
-  }
-  hideAnnotationsHighlight() {
-    this.sectionsAnnotation().forEach(section => {
-      section.annotations.forEach(ann => {
-        ann.identity.highlight = false
-      })
-    })
-  }
-
-  setCurrentSection(index: number) {
-    this._store.updateStore({ questionCurrentSectionIndex: index })
-  }
-
-  selectAnnotation(item: QuestionAnnotation, event: MouseEvent) {
-    if (item.identity.highlight) {
-      item.identity.highlight = false
-      return
-    }
-
-    item.identity.highlight = !item.identity.highlight
   }
 }

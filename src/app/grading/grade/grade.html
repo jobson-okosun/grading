@@ -1,104 +1,246 @@
-<section class="h-dvh flex flex-col text-sm">
-    <!-- topbar -->
-    <app-overview />
+@if(!isLoadingPage()) {
+    <section class="h-dvh flex flex-col text-sm">
+        <!-- topbar -->
+        <app-overview />
 
-    <!-- main content -->
-    <div class="flex-1 overflow-hidden">
-        <div class="flex h-full">
-            <!-- sidebar -->
-            <div class="w-[21%] 2xl:w-[18%] h-full overflow-y-auto">
-                <div class="h-full p-2 bg-gray-100 flex flex-col gap-2">
-                    <app-candidate-profile />
-                    <div class="rounded-2xl bg-white p-3 border border-gray-200 flex flex-col gap-3">
-                        <div class="flex justify-between items-center gap-2">
-                            <div class="font-bold">Section {{ currrentQuestionCurrentSection()?.name }}</div>
-                            <div class="rounded-2xl p-1 border border-gray-200 flex gap-2">
-                                <button (click)="prevSection()" [disabled]="store().questionCurrentSectionIndex == 0" class="-rotate-180 w-8 h-8 flex items-center justify-center rounded-lg bg-gray-600 transition cursor-pointer disabled:opacity-50">
-                                    <svg class=" stroke-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18" />
-                                    </svg>
-                                </button>
-                                <button (click)="nextSection()" [disabled]="(store().questionCurrentSectionIndex == (this.store().currentQuestion?.gradingGuide?.sections?.length ?? 0) - 1)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-600 transition cursor-pointer disabled:opacity-50">
-                                    <svg class=" stroke-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                            @if(hasAnyScore()) {
-                                <app-section-score />
-                                <app-scores />
-                            } @else {
-                                <div class="p-3 mt-10 rounded-2xl bg-gray-100">
-                                    <div class="flex flex-col justify-center items-center gap-3">
-                                        <div class="size-30 rounded-full bg-gray-200 flex items-center justify-center">
-                                            <svg class="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-
-                                        <div class="text-center">
-                                            <div class="text-xs font-bold mb-3 uppercase">No Scores</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                </div>
-            </div>
-
-            <!-- content -->
-            <div class="flex-1 h-full overflow-hidden flex flex-col px-2 py-1">
-                <!-- status bar -->
-                <div class="flex items-center justify-between gap-5 mb-2">
-                    <app-paginator />
-
-                    <app-navigation />
-                    
-                    <app-tools />
-                </div>
-
-                <!-- canvas area -->
-                <div class="flex-1 overflow-hidden">
-                    <div class="border border-dashed border-gray-300 bg-white rounded-2xl h-full relative overflow-hidden workspace-container">
-                        @if(store().canvas.type == 'DEFAULT') {
-                            <app-canvas />
+        <!-- main content -->
+        <div class="flex-1 overflow-hidden">
+            <div class="flex h-full">
+                <!-- sidebar -->
+                <div class="w-[21%] 2xl:w-[18%] h-full overflow-y-auto no-scrollbar">
+                    <div class="h-full p-2 bg-gray-100 flex flex-col gap-2">
+                        @if(store().candidate) {
+                            <app-candidate-profile />
                         }
-                        
-                        <div class="absolute top-0 left-0 z-10" style="width: calc(100% - 15px); height: calc(100% - 15px);">
-                            <div class="relative w-full h-full">
-                                <app-workspace />
 
-                                @if(store().canvas.type == 'OVERLAY') {
-                                    <div class="absolute inset-0 w-full h-full">
-                                        <app-canvas />
+                        <div class="rounded-2xl bg-white p-3 border border-gray-200 flex flex-col gap-3">
+                            <div class="flex justify-between items-center gap-2">
+                                <div class="flex flex-col gap-1">
+                                    <span class="font-bold">Section {{ currentQuestionCurrentSection()?.name }}</span>
+                                    @if(currentQuestionCurrentSection()?.not_attempted) {
+                                        <span class="text-xs bg-red-50 text-red-500 px-2 py-1 rounded-md">Not attempted</span>
+                                    }
+                                </div>
+                                <div class="rounded-2xl p-1 border border-gray-200 flex gap-2">
+                                    <button (click)="prevSection()" [disabled]="store().questionCurrentSectionIndex == 0" class="-rotate-180 w-8 h-8 flex items-center justify-center rounded-lg bg-gray-600 transition cursor-pointer disabled:opacity-50">
+                                        <svg class=" stroke-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18" />
+                                        </svg>
+                                    </button>
+                                    <button (click)="nextSection()" [disabled]="(store().questionCurrentSectionIndex == ((currentQuestionMarkingGuide()?.sections?.length ?? 0) - 1))" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-600 transition cursor-pointer disabled:opacity-50">
+                                        <svg class=" stroke-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#4a4a4a" fill="none" stroke="#141B34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                                @if(hasAnyScore() || hasAnyGeneralScore()) {
+                                    <app-section-score />
+                                    
+                                    <app-scores 
+                                        [class.opacity-40]="currentQuestionCurrentSection()?.not_attempted"
+                                        [class.pointer-events-none]="currentQuestionCurrentSection()?.not_attempted"
+                                    />
+                                } @else {
+                                    <div class="p-3 mt-10 rounded-2xl bg-gray-100">
+                                        <div class="flex flex-col justify-center items-center gap-3">
+                                            <div class="size-30 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <svg class="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+
+                                            <div class="text-center">
+                                                <div class="text-xs font-bold mb-3 uppercase">No Scores</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 }
                             </div>
+                    </div>
+                </div>
+
+                <!-- content -->
+                <div class="flex-1 h-full overflow-hidden flex flex-col px-2 py-1">
+                    <!-- status bar -->
+                    <div class="flex items-center justify-between gap-5 mb-2">
+                        <app-paginator />
+
+                        <app-navigation />
+                        
+                        <app-tools />
+                    </div>
+
+                    <!-- canvas scroll window -->
+                    <div class="relative w-full h-max overflow-hidden" [style.height.px]="1000" >
+                        <div class="h-full border border-dashed border-gray-300 bg-white rounded-2xl relative overflow-auto">
+                            @if(store().canvas.type == 'DEFAULT') {
+                                <app-canvas />
+                            }
+                            
+                            <!-- actual canvas size -->
+                            <div [style.height.px]="canvasHeight()" [style.width.px]="canvasWidth()" class="absolute top-0 left-0 z-10">
+                                <div class="relative w-full h-full">
+                                    <app-workspace />
+
+                                    @if(store().canvas.type == 'OVERLAY') {
+                                        <div class="absolute inset-0 w-full h-full">
+                                            <app-canvas />
+                                        </div>
+                                    }
+                                </div>
+                            </div>                        
+                        </div>
+
+                        @if(!currentQuestionHasResponse()) {
+                            <div class="w-full h-full flex flex-col items-center justify-center absolute inset-0 bg-transparent">
+                                <div class="w-30 h-30 bg-gray-50 rounded-full flex items-center justify-center mb-5">
+                                    <svg class="stroke-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="60" height="60" color="#4a4a4a" fill="none" stroke="#4a4a4a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22C11.1818 22 10.4002 21.6646 8.83693 20.9939C4.94564 19.3243 3 18.4895 3 17.0853L3 7.7475M12 22C12.8182 22 13.5998 21.6646 15.1631 20.9939C19.0544 19.3243 21 18.4895 21 17.0853V7.7475M12 22L12 12.1707M21 7.7475C21 8.35125 20.1984 8.7325 18.5953 9.495L15.6741 10.8844C13.8712 11.7419 12.9697 12.1707 12 12.1707M21 7.7475C21 7.14376 20.1984 6.7625 18.5953 6M3 7.7475C3 8.35125 3.80157 8.7325 5.40472 9.495L8.32592 10.8844C10.1288 11.7419 11.0303 12.1707 12 12.1707M3 7.7475C3 7.14376 3.80157 6.7625 5.40472 6M6.33203 13.311L8.32591 14.2594" />
+                                        <path d="M12 2V4M16 3L14.5 5M8 3L9.5 5" />
+                                    </svg>
+                                </div>
+                                <p class="text-gray-500">No response found</p>
+                            </div>
+                        }
+
+                        @if(currentPageIsBlank()) {
+                            <div class="absolute inset-0 m-2 pointer-events-none  bg-[linear-gradient(to_top_left,transparent_49.8%,red_50%,transparent_50.2%)]"></div>
+                        }
+                    </div>
+
+                    <app-status />
+                </div>
+
+                <!-- sidebar -->
+                @if(questionSidebarOpen()) {
+                    <div class="w-[21%] 2xl:w-[18%] h-full overflow-hidden">
+                        <div class="h-full bg-gray-100 p-2 flex flex-col gap-2 overflow-y-auto">
+                            <!-- accordion item -->
+                            @if(currentQuestion()) {
+                                <app-current-question/>
+                            }
+                            
+                            @for(item of questions(); track $index) {
+                            @if($index !== $any(store().currentQuestionIndex)) {
+                                <app-question [questionIndex]="$index" />
+                            }
+                            }
                         </div>
                     </div>
-                </div>
+                }
+            </div>
+        </div>
+    </section>
+} @else {
+    <div class="h-dvh w-full flex bg-gray-100 animate-pulse">
 
-                <app-status />
+        <!-- LEFT SIDEBAR -->
+        <div class="w-72 p-4 space-y-4 bg-white border-r border-gray-200">
+            
+            <!-- Profile -->
+            <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gray-300"></div>
+            <div class="flex-1 space-y-2">
+                <div class="h-3 bg-gray-300 rounded w-2/3"></div>
+                <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
             </div>
 
-            <!-- sidebar -->
-            @if(questionSidebarOpen()) {
-                <div class="w-[21%] 2xl:w-[18%] h-full overflow-hidden">
-                    <div class="h-full bg-gray-100 p-2 flex flex-col gap-2 overflow-y-auto">
-                        <!-- accordion item -->
-                        @if(store().currentQuestion) {
-                            <app-current-question/>
-                        }
-                        
-                        @for(item of questions(); track $index) {
-                           @if($index !== $any(store().currentQuestionIndex)) {
-                               <app-question [questionIndex]="$index" />
-                           }
-                        }
+            <!-- Section box -->
+            <div class="space-y-3">
+            <div class="h-4 w-24 bg-gray-300 rounded"></div>
+            <div class="grid grid-cols-2 gap-2">
+                <div class="h-14 bg-gray-200 rounded"></div>
+                <div class="h-14 bg-gray-200 rounded"></div>
+                <div class="h-14 bg-gray-200 rounded"></div>
+                <div class="h-14 bg-gray-200 rounded"></div>
+            </div>
+            </div>
+
+            <!-- Score pills -->
+            <div class="space-y-2">
+            <div class="h-4 w-20 bg-gray-300 rounded"></div>
+            <div class="flex flex-wrap gap-2">
+                <div class="h-6 w-12 bg-gray-200 rounded-full"></div>
+                <div class="h-6 w-10 bg-gray-200 rounded-full"></div>
+                <div class="h-6 w-14 bg-gray-200 rounded-full"></div>
+                <div class="h-6 w-12 bg-gray-200 rounded-full"></div>
+            </div>
+            </div>
+
+            <!-- Penalty -->
+            <div class="space-y-2">
+            <div class="h-4 w-20 bg-gray-300 rounded"></div>
+            <div class="flex flex-wrap gap-2">
+                <div class="h-6 w-12 bg-gray-200 rounded-full"></div>
+                <div class="h-6 w-10 bg-gray-200 rounded-full"></div>
+                <div class="h-6 w-14 bg-gray-200 rounded-full"></div>
+            </div>
+            </div>
+
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="flex-1 flex flex-col">
+
+            <!-- Top bar -->
+            <div class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+            <div class="flex gap-2">
+                <div class="h-8 w-10 bg-gray-300 rounded"></div>
+                <div class="h-8 w-10 bg-gray-200 rounded"></div>
+                <div class="h-8 w-10 bg-gray-200 rounded"></div>
+            </div>
+
+            <div class="flex gap-3">
+                <div class="h-8 w-16 bg-gray-300 rounded"></div>
+                <div class="h-8 w-16 bg-gray-200 rounded"></div>
+            </div>
+
+            <div class="h-8 w-24 bg-gray-300 rounded"></div>
+            </div>
+
+            <!-- Canvas area -->
+            <div class="flex-1 p-4 overflow-hidden">
+            <div class="w-full h-full bg-white rounded-lg border border-gray-200 relative overflow-hidden">
+
+                <!-- Fake lines -->
+                <div class="absolute inset-0 space-y-3 p-6">
+                    <div class="w-full h-full flex flex-col justify-center items-center">
+                        <!-- <div class="flex items-center justify-center mb-2">
+                            <div class="w-8 h-8 border-4 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div> -->
+
+                        <div class="text-gray-600">Please wait....</div>
                     </div>
                 </div>
-            }
+
+            </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="w-80 bg-white border-l border-gray-200 p-4 space-y-4">
+
+            <!-- Tabs -->
+            <div class="flex gap-2">
+            <div class="h-8 w-20 bg-gray-300 rounded"></div>
+            <div class="h-8 w-20 bg-gray-200 rounded"></div>
+            <div class="h-8 w-20 bg-gray-200 rounded"></div>
+            </div>
+
+            <!-- Questions list -->
+            <div class="space-y-3">
+            <div class="h-4 w-32 bg-gray-300 rounded"></div>
+
+            <div class="space-y-2">
+                <div class="h-10 bg-gray-200 rounded"></div>
+                <div class="h-10 bg-gray-200 rounded"></div>
+                <div class="h-10 bg-gray-200 rounded"></div>
+            </div>
+            </div>
+
         </div>
     </div>
-</section>
+} 

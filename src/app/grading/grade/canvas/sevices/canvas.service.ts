@@ -5,12 +5,14 @@ import { Subscription } from "rxjs";
 import Konva from 'konva';
 import { DrawingStoreEvent } from "./event.service";
 import { scrollContainers } from "../../../utils/helper";
+import { GradingService } from "../../../services/grading.service";
 
 @Injectable({ providedIn: 'root' })
 export class CanvasService {
     private _drawingStore = inject(DrawingAndWritingStore)
     private _drawingStoreEvent = inject(DrawingStoreEvent)
     private _store = inject(Store)
+    private _gradingService = inject(GradingService)
 
     questionChangeSub$: Subscription
     pageSelectEvent$: Subscription
@@ -34,8 +36,8 @@ export class CanvasService {
     brushSize = signal(2)
     brushColor = signal('#000000')
     eraserColor = signal('#f5f5f7')
-    canvasWidth = signal(2000)
-    canvasHeight = signal(2000)
+    canvasWidth = signal(3000)
+    canvasHeight = signal(3000)
 
     constructor() {
         this.loaded.set(true)
@@ -594,7 +596,7 @@ export class CanvasService {
             next: () => {
                 loadCurrentPageStrokes()
                 scrollContainers()
-                this.backgroundType.set(this.store().currentQuestion!.question.item.backgroundType as any)
+                this.backgroundType.set(this._gradingService.currentQuestion().item.backgroundType as any)
                 this._drawingStoreEvent._backgroundChange$.next(this.backgroundType())
             }
         })

@@ -17,7 +17,7 @@ export class Paginator {
   private _store = inject(Store)
 
   store = computed(() => this._store.store())
-  pages = computed(() => this.store().currentQuestion?.question.pages)
+  pages = computed(() => this._gradingService.currentQuestion()?.pages)
   currentPage = computed(() => this._drawingStore.store().currentPage)
 
   onPageChange(pageIndex: number) {

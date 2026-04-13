@@ -23,30 +23,30 @@ export class Canvas {
 
   store = computed(() => this._store.store())
   currentQuestionIndex = computed(() => this.store().currentQuestionIndex)
-  currentQuestion = computed(() => this.store().currentQuestion)
+  currentQuestion = computed(() => this._gradingService.currentQuestion())
   currentQuestionId = signal<string | null>(null)
-  hasResponse = computed(() => this.currentQuestion()?.question.item_score.un_graded_response.length)
+  hasResponse = computed(() => this.currentQuestion()?.item_score.un_graded_response.length)
+  currentPageIsBlank = computed(() => this._gradingService.currentPageIsBlank())
 
   questionChanged = effect(() => {
-    if (this.currentQuestion()?.question.item.id !== this.currentQuestionId()) {
-      this.currentQuestionId.set(this.currentQuestion()?.question.item.id!)
+    if (this.currentQuestion()?.item.id !== this.currentQuestionId()) {
+      this.currentQuestionId.set(this.currentQuestion()?.item.id!)
 
       this._drawingStoreEvent._questionChanged$.next(true)
       setTimeout(() => { this.prepareCanvasAndStoreDataOnLoad() })
     }
   })
 
-  currentPageIsBlank = computed(() => this._gradingService.currentPageIsBlank())
 
   prepareCanvasAndStoreDataOnLoad() {
-    const currentQuestion = this.store().currentQuestion
+    const currentQuestion = this.currentQuestion()
 
     if (this.hasResponse()) {
-      const jsonResponse = JSON.parse(currentQuestion!.question.item_score.un_graded_response[0]) as DrawingStore
+      const jsonResponse = JSON.parse(currentQuestion!.item_score.un_graded_response[0]) as DrawingStore
       const annotationsTosave: QuestionAnnotation[] = []
 
       jsonResponse.pages.forEach((page, index) => {
-        (currentQuestion?.question.item_score?.annotations ?? [])
+        (currentQuestion?.item_score?.annotations ?? [])
           .map(ann => {
             let annotation = new QuestionAnnotation()
             const annotationIdentity = new AnnotationIdentity()
@@ -78,7 +78,7 @@ export class Canvas {
     }
 
 
-    const backgroundType = this.store().currentQuestion?.question.item.backgroundType as any
+    const backgroundType = this.currentQuestion()?.item.backgroundType as any
     this._canvasService.backgroundType.set(backgroundType)
     this._drawingStoreEvent._backgroundChange$.next(backgroundType)
     this._canvasService.initializeCanvas()

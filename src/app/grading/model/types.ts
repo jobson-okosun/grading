@@ -118,6 +118,9 @@ export interface GeneralScoreDTO {
 export interface GeneralScoreDB extends GeneralScoreDTO {
   id: string;
   boundary: SchemeScoreBoundary;
+
+  // Temp extension
+  usage: number
 }
 
 export interface SelectSchemeQuestionToAdd {
@@ -222,6 +225,9 @@ export interface SchemeQuestionSectionsTransformed {
   scores_correct: SchemeQuestionSectionScoreScoreDB[];
   scores_penalty: SchemeQuestionSectionScoreScoreDB[];
   scores_violation: SchemeQuestionSectionScoreScoreDB[];
+
+  // Temp extension
+  not_attempted: boolean
 }
 
 export enum ItemType {
@@ -240,6 +246,22 @@ export enum ItemType {
   CLOZE_DROPDOWN_IMAGE = 'CLOZE_DROPDOWN_IMAGE',
   IMAGE_DRAG_AND_DROP = 'IMAGE_DRAG_AND_DROP',
   DRAWING_AND_WRITING = 'DRAWING_AND_WRITING'
+}
+
+export interface gradingInformation {
+  isSeed: boolean,
+  assessment_id: string,
+  section_id: string,
+  scheme_id: string,
+  subject_id: string,
+  examiner_id: string,
+  session_id: string,
+}
+
+export interface SeedParticipantSectionTranscript {
+  scripts: ParticipantSectionTranscript[];
+  lock: number;
+  psr_id: number;
 }
 
 export interface ParticipantSectionTranscript {
@@ -482,4 +504,8 @@ export class Section_Attempt_Summary {
   total_manual_graded_items_mark: number;
   total_manual_graded_items: number;
   total_penalty_mark_lost: number;
+}
+
+export class ResourceCreated {
+  id?: string;
 }

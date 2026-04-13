@@ -5,6 +5,7 @@ import { DrawerModule } from 'primeng/drawer';
 import { AccordionModule } from 'primeng/accordion';
 import { MenuModule } from 'primeng/menu';
 import { DrawingStoreEvent } from '../canvas/sevices/event.service';
+import { GradingService } from '../../services/grading.service';
 
 @Component({
   selector: 'app-question-tools',
@@ -15,15 +16,15 @@ import { DrawingStoreEvent } from '../canvas/sevices/event.service';
 export class QuestionTools {
   private _store = inject(Store)
   private _drawingStoreEvent = inject(DrawingStoreEvent)
+  private _gradingService = inject(GradingService)
 
   store = computed(() => this._store.store())
   currentQuestionIndex = computed(() => this.store().currentQuestionIndex)
-  currentQuestion = computed(() => this.store().currentQuestion)
+  currentQuestionMarkingGuide = computed(() => this._gradingService.currentQuestionMarkingGuide())
+  currentQuestion = computed(() => this._gradingService.currentQuestion())
   showQuestionModal = signal(false)
   showMarkingGuideDrawer = signal(false)
   selectedTools = computed(() => Array.from(this.store().canvas.selectedMeasuringToolsSet.values()))
-
-  // todo: Add general scores to scores
 
   selectMeasurementTool(tool: string) {
     this._store.updateStore({
@@ -58,6 +59,16 @@ export class QuestionTools {
           selectedMeasuringToolsSet: set
         }
       })
+
+      if (this.store().canvas.selectedMeasuringToolsSet.size === 0) {
+        this._store.updateStore({
+          canvas: {
+            ...this.store().canvas,
+            type: 'DEFAULT',
+            selectedMeasuringToolsSet: new Set()
+          }
+        })
+      }
     }
 
     this._drawingStoreEvent._removeMeasurementTool$.next(tool);

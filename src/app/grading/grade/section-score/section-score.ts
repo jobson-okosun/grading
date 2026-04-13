@@ -13,7 +13,7 @@ export class SectionScore {
   private _gradingService = inject(GradingService)
 
   store = computed(() => this._store.store())
-  currentQuestion = computed(() => this.store().currentQuestion)
+  currentQuestion = computed(() => this._gradingService.currentQuestion())
   gradeSummary = computed(() => this._gradingService.gradeSummary())
-  currentQuestionSummary = computed(() => this.gradeSummary().find(x => x.id == this.currentQuestion()?.question.item.id))
+  currentQuestionSummary = computed(() => this.gradeSummary().find(x => x.id == this.currentQuestion()?.item.id))
 }
