@@ -6,6 +6,7 @@ import { ConfirmationService } from 'primeng/api';
 import { DataService } from '../../services/data.service';
 import { HotToastService } from '@ngxpert/hot-toast';
 import { Router } from '@angular/router';
+import { ExaminerGradeSeedDTO, MarkType } from '../../model/types';
 
 @Component({
   selector: 'app-overview',
@@ -26,6 +27,7 @@ export class Overview implements OnDestroy {
 
   showGradingSummary = model(false)
   isSubmitting = signal(false)
+  isRejectingSeed = signal(false)
 
   gradeSummary = computed(() => this._gradingService.gradeSummary())
   totalScore = computed(() => this.gradeSummary().reduce((acc, item) => acc + item.summary.score, 0))
@@ -53,7 +55,6 @@ export class Overview implements OnDestroy {
   questionsPagesStatus = computed(() => this._gradingService.questionsPagesStatus())
   totalQuestionByPagesUngraded = computed(() => this.questionsPagesStatus().filter(q => !q.status)?.length)
 
-
   isGradingSeed = computed(() => this._gradingService.isGradingSeed())
 
   constructor() {
@@ -74,6 +75,35 @@ export class Overview implements OnDestroy {
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   });
 
+  rejectSeedScript() {
+    const gradingInfo = this.store().gradingInfo
+    const seedResponse = this._dataService.tempStore().seedQuestionsResponse
+
+    const payload = {
+      marker_id: gradingInfo?.data.examiner_id,
+      session_id: gradingInfo?.data.session_id,
+      subject_id: gradingInfo?.data.subject_id,
+      assessment_id: gradingInfo?.data.assessment_id,
+      section_id: gradingInfo?.data.section_id,
+      psr_id: Number(seedResponse?.psr_id),
+      participant_id: this._dataService.participantId(),
+      lock_id: Number(seedResponse?.lock),
+      mark_type: 'Seed' as MarkType,
+    }
+
+    this._dataService.rejectSeedScript(payload).subscribe({
+      next: () => {
+        this._toast.success('Seed script rejected successfully')
+        this.showGradingSummary.set(false)
+        this.isRejectingSeed.set(false)
+        this.router.navigate(['/grading/overview'])
+      },
+      error: (error) => {
+        this._toast.error(error.error.message ?? 'Sorry! Could not reject script. Please try again.')
+        this.isRejectingSeed.set(false)
+      }
+    })
+  }
 
   openFinishConfirmation() {
     if (!this.allQuestionsSectionsGraded()) {
@@ -109,10 +139,23 @@ export class Overview implements OnDestroy {
     })
   }
 
-  finishGrading() {
-    const payload = this._gradingService.formatGradingPayload()
+  finishSeedGrading() {
+    let payload: ExaminerGradeSeedDTO
+    const items = this._gradingService.formatGradingPayload()
+
+    payload = {
+      assessment_id: this.store().gradingInfo?.data.assessment_id,
+      participant_id: this._dataService.participantId(),
+      section_id: this.store().gradingInfo?.data.section_id,
+      item_ids_score: items,
+      session_id: this.store().gradingInfo?.data.session_id,
+      subject_id: this.store().gradingInfo?.data.subject_id,
+      lock_id: Number(this._dataService.tempStore().seedQuestionsResponse?.lock),
+      psr_id: Number(this._dataService.tempStore().seedQuestionsResponse?.psr_id),
+    }
+
     this.isSubmitting.set(true)
-    this._dataService.finishGrading(payload).subscribe({
+    this._dataService.finishSeedGrading(payload).subscribe({
       next: () => {
         this._toast.success('Grading finished successfully')
         this.showGradingSummary.set(false)
@@ -124,6 +167,36 @@ export class Overview implements OnDestroy {
         this.isSubmitting.set(false)
       }
     })
+  }
+
+  finishGrading() {
+    // let payload: ExaminerGradeSeedDTO
+    // const items = this._gradingService.formatGradingPayload()
+
+    // payload = {
+    //   assessment_id: this.store().gradingInfo.assessment_id,
+    //   participant_id: this._dataService.participantId(),
+    //   section_id: this.store().gradingInfo.section_id,
+    //   item_ids_score: items,
+    //   session_id: this.store().gradingInfo.session_id,
+    //   subject_id: this.store().gradingInfo.subject_id,
+    //   lock_id: Number(this._dataService.tempStore().seedQuestionsResponse?.lock),
+    //   psr_id: Number(this._dataService.tempStore().seedQuestionsResponse?.psr_id),
+    // }
+
+    // this.isSubmitting.set(true)
+    // this._dataService.finishGrading(payload).subscribe({
+    //   next: () => {
+    //     this._toast.success('Grading finished successfully')
+    //     this.showGradingSummary.set(false)
+    //     this.isSubmitting.set(false)
+    //     this.router.navigate(['/grading/overview'])
+    //   },
+    //   error: (error) => {
+    //     this._toast.error(error.error.message ?? 'Sorry! Could not finish grading. Please try again.')
+    //     this.isSubmitting.set(false)
+    //   }
+    // })
   }
 
   getSectionScores(questionIndex: number, sectionIndex: number): { correct: number, penalty: number, violation: number, total: number } {

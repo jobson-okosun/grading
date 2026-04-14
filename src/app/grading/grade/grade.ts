@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { ConfigService } from '../services/config.service';
 import { Overview } from './overview/overview';
 import { Scores } from "./scores/scores";
@@ -36,6 +36,7 @@ export default class Grade {
   private _drawingStore = inject(DrawingAndWritingStore)
   private _toast = inject(HotToastService)
 
+  hasUnsavedChanges = signal(true)
   isLoadingPage = computed(() => this._dataService.isLoadingGuide() || this._dataService.isLoadingQuestions())
   questionSidebarOpen = computed(() => this._configService.questionSidebarOpen())
   store = computed(() => this._store.store())

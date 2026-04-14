@@ -4,7 +4,7 @@ import { User } from '../user/user';
 import { DataService } from '../services/data.service';
 import { HotToastService } from '@ngxpert/hot-toast';
 import { GradingService } from '../services/grading.service';
-import { ParticipantSectionTranscript, SeedParticipantSectionTranscript } from '../model/types';
+import { lastValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-layout',
@@ -23,14 +23,38 @@ export default class Layout {
   gradingInfo = computed(() => this._gradingService.store().gradingInfo)
 
   ngOnInit() {
-    this.fetchInfo()
+    this.restoreState()
   }
 
-  fetchInfo() {
-    this._dataService.fetchGradingInformation().subscribe()
+  async fetchInfo() {
+    try {
+      // other api calls must be called after this login
+      await lastValueFrom(this._dataService.login())
+      await lastValueFrom(this._dataService.fetchGradingInformation())
+      await lastValueFrom(this._dataService.fetchSessionState())
+      await lastValueFrom(this._dataService.fetchSchemeId())
+      await lastValueFrom(this._dataService.fetchMarkingGuide())
+
+    } catch (error) {
+      this._toast.error('Failed load grading data', { position: 'top-right' })
+    }
   }
 
-  startGrading(event: Event) {
+  restoreState() {
+    const params = localStorage.getItem('params')
+
+    if (params) {
+      const queryParams = JSON.parse(params)
+
+      this._dataService.userId.set(queryParams.userId)
+      this._dataService.sessionId.set(queryParams.sessionId)
+      this._dataService.subjectId.set(queryParams.subjectId)
+
+      this.fetchInfo()
+    }
+  }
+
+  startGrading() {
     this._dataService.fetchQuestionsToGrade(false)
       .pipe(this._toast.observe({
         loading: 'Please wait...',
@@ -38,18 +62,13 @@ export default class Layout {
         error: ' '
       }))
       .subscribe({
-        next: (res) => {
-          this._router.navigate(['/app/grade/'])
+        next: () => {
+          this._router.navigate(['/app/grade'])
         },
         error: (error) => {
           this._toast.error(error.message ?? 'Failed to fetch questions to grade', { position: 'top-right' })
-
-          this._router.navigate(['/app/grade/'])
+          this._router.navigate(['/app/grade'])
         }
       })
-  }
-
-  gotoGrading() {
-    this._router.navigate(['/app/grade/'])
   }
 }

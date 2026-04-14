@@ -1,9 +1,8 @@
 import { Routes } from '@angular/router';
 import Layout from './grading/layout/layout';
-import { authGuard } from './grading/guards/auth.guard';
+import { authGuard, unsavedChangesGuard } from './grading/guards/auth.guard';
 
 export const routes: Routes = [
-    { path: '', redirectTo: 'app', pathMatch: 'full' },
     {
         path: 'app',
         children: [
@@ -20,7 +19,11 @@ export const routes: Routes = [
                 path: 'grade',
                 canActivate: [authGuard],
                 children: [
-                    { path: '', loadComponent: () => import('./grading/grade/grade') }
+                    {
+                        path: '',
+                        loadComponent: () => import('./grading/grade/grade'),
+                        canDeactivate: [unsavedChangesGuard]
+                    }
                 ]
             }
         ]

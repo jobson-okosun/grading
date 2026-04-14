@@ -248,21 +248,41 @@ export enum ItemType {
   DRAWING_AND_WRITING = 'DRAWING_AND_WRITING'
 }
 
-export interface gradingInformation {
-  isSeed: boolean,
-  assessment_id: string,
-  section_id: string,
-  scheme_id: string,
-  subject_id: string,
-  examiner_id: string,
-  session_id: string,
+export interface UserProxyRequest {
+  message: string
+  data: {
+    subject_id: string,
+    section_id: string,
+    examiner_id: string,
+    assessment_id: string,
+    session_id: string,
+  }
 }
+
 
 export interface SeedParticipantSectionTranscript {
   scripts: ParticipantSectionTranscript[];
   lock: number;
   psr_id: number;
 }
+
+export interface SessionStateMessage {
+  message: string;
+  data: SessionStateDto;
+}
+
+export interface SessionStateDto {
+  session_id: string;
+  state: SessionState;
+}
+
+export enum SessionState {
+  Script = "Script",
+  Seed = "Seed",
+  Vetting = "Vetting",
+  None = "None",
+}
+
 
 export interface ParticipantSectionTranscript {
   item_score: CandidateItemScore;
@@ -334,6 +354,21 @@ export class Grading {
   include_penalty: boolean;
   annotations: QuestionAnnotation[]
 }
+
+export interface ExaminerGradeSeedDTO {
+  assessment_id: string
+  participant_id: string
+  section_id: string
+  item_ids_score: ManualGradeDTO[]
+  session_id: string
+  subject_id: string
+  lock_id: number
+  psr_id: number
+}
+
+export interface ManualGradeDTO extends Grading {
+}
+
 
 export interface Totals {
   violations: number;
@@ -508,4 +543,41 @@ export class Section_Attempt_Summary {
 
 export class ResourceCreated {
   id?: string;
+}
+
+export enum MarkType {
+  Seed = "Seed",
+  Script = "Script",
+}
+
+export interface RejectSeedByExaminerDTO {
+  marker_id: string;
+  session_id: string;
+  subject_id: string;
+  assessment_id: string;
+  section_id: string;
+  psr_id: number;
+  participant_id: string;
+  lock_id: number;
+  mark_type: MarkType;
+}
+
+export class DataServiceTempStore {
+  markingGuide: SchemePageData | null;
+  seedQuestionsResponse: SeedParticipantSectionTranscript | null;
+  questionResponse: ParticipantSectionTranscript | null;
+  candidate: Participant_Result_Data_DTO | null;
+  gradingInfo: UserProxyRequest | null;
+  session: SessionStateMessage | null;
+  schemeId: string | null;
+
+  constructor() {
+    this.markingGuide = null;
+    this.seedQuestionsResponse = null;
+    this.questionResponse = null;
+    this.candidate = null;
+    this.gradingInfo = null;
+    this.session = null;
+    this.schemeId = null;
+  }
 }

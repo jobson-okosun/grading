@@ -1,2 +1,18 @@
+@if (showLoader()) {
+    <div class="w-full h-dvh flex flex-col justify-center items-center">
+        <div class="flex items-center justify-center mb-2">
+            <div class="w-8 h-8 border-4 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+
+        <div class="text-gray-600">Please wait....</div>
+    </div>
+} @else if (showParamsError()) {
+    <div class="w-full h-dvh flex flex-col justify-center items-center">
+        <div class="text-red-600">Error: Missing query parameters</div>
+    </div>
+}
+
+@else {
 <router-outlet />
+}
 <p-confirmDialog></p-confirmDialog>

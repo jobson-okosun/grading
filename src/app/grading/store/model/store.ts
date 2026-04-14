@@ -1,7 +1,8 @@
-import { SchemePageData, ParticipantSectionTranscript, Participant_Result_Data_DTO, gradingInformation } from "../../model/types"
+import { SchemePageData, ParticipantSectionTranscript, Participant_Result_Data_DTO, UserProxyRequest, SessionStateMessage } from "../../model/types"
 
 export class StoreDTO {
-    gradingInfo: gradingInformation
+    gradingInfo: UserProxyRequest
+    session: SessionStateMessage
     markingGuide: SchemePageData
     questions: ParticipantSectionTranscript[]
     candidate: Participant_Result_Data_DTO

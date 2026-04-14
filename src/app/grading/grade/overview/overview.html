@@ -1,5 +1,5 @@
 <div class="border-b border-gray-300 flex items-center justify-between p-1 bg-white">
-    <div class="font-bold text-lg uppercase ml-2">{{ store().candidate.exam_name }}</div>
+    <div class="font-bold text-lg uppercase ml-2">{{ store()?.candidate?.exam_name }}</div>
     <div class="flex gap-2">
         <div class="rounded-2xl border border-gray-200 divide-x divide-gray-200 px-2.5 py-1 flex text-center">
             <div class="pr-2">Visited <br><strong class="text-green-500">{{ totalVisited() }}</strong></div>
@@ -43,13 +43,13 @@
             </div>
         </div>
         @if(!isGradingSeed()) {
-            <button class="rounded-sm bg-red-700 px-3 py-2 text-white flex gap-2 items-center">Reject</button>
+            <button (click)="rejectSeedScript()" [disabled]="isRejectingSeed()" class="rounded-sm bg-red-700 px-3 py-2 text-white flex gap-2 items-center">Reject</button>
         }
         @if(!gradingStarted()) {
             <button class="btn fill py-2! px-3!" (click)="startGrading()">Start</button>
         } @else {
             @defer(on timer(2s)) {
-                <button class="btn fill py-2! px-3!" (click)="openFinishConfirmation()">Finish</button>
+                <button class="btn fill py-2! px-3!" (click)="isGradingSeed() ? finishSeedGrading() : openFinishConfirmation()">Finish</button>
             }
         }
     </div>

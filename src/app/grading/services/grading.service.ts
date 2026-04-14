@@ -1,7 +1,7 @@
 import { computed, effect, inject, Injectable, linkedSignal, signal, untracked } from "@angular/core";
 import { Store } from "../store/store";
 import { AnnotationIdentity, AnnotationScoreShape, AnnotationShape, AnnotationToApply, GradeSummary } from "../store/model/types";
-import { GeneralScoreDB, Grading, ParticipantSectionTranscript, QuestionAnnotation, QuestionPage, SchemeMarkCategory, SchemePageData, SchemeQuestionSectionScoreScoreDB, SchemeQuestionSectionsTransformed, SchemeQuestionsTransformed, SchemeScoreBoundary } from "../model/types";
+import { GeneralScoreDB, Grading, ParticipantSectionTranscript, QuestionAnnotation, QuestionPage, SchemeMarkCategory, SchemePageData, SchemeQuestionSectionScoreScoreDB, SchemeQuestionSectionsTransformed, SchemeQuestionsTransformed, SchemeScoreBoundary, SessionState } from "../model/types";
 import { HotToastService } from "@ngxpert/hot-toast";
 import { DrawingAndWritingStore } from "../grade/canvas/sevices/canvas-store";
 import { Store as DrawingStore } from '../grade/canvas/model/store.mode'
@@ -39,7 +39,7 @@ export class GradingService {
     questionsGradedStatus = signal<{ questionId: string, questionIndex: number, sectionsUngraded: SchemeQuestionSectionsTransformed[], status: boolean }[]>([])
     questionsPagesStatus = signal<{ questionId: string, questionIndex: number, ungradedPages: QuestionPage[], status: boolean }[]>([])
 
-    isGradingSeed = linkedSignal(() => this.store().gradingInfo?.isSeed)
+    isGradingSeed = signal(false)
 
     gradingStarted = signal(false)
 
