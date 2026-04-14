@@ -27,6 +27,7 @@ export class App {
         const userId = params.get('userId');
         const sessionId = params.get('sessionId');
         const subjectId = params.get('subjectId');
+        const userRemoteId = params.get('userRemoteId');
 
         if (location.pathname.includes('app')) {
           this.showLoader.set(false)
@@ -40,7 +41,7 @@ export class App {
             this.showParamsError.set(true)
           });
         } else {
-          const queryParams = { userId, sessionId, subjectId };
+          const queryParams = { userId, sessionId, subjectId, userRemoteId };
           localStorage.setItem('params', JSON.stringify(queryParams));
 
           timer(2000).subscribe(() => {

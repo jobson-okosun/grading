@@ -75,12 +75,27 @@ export class Overview implements OnDestroy {
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   });
 
+
+  openRejectConfirmation() {
+    this._confirmationService.confirm({
+      header: 'Reject Script',
+      message: `Are you sure you want to reject this  script?`,
+      acceptLabel: 'Yes',
+      rejectLabel: 'No',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
+      accept: () => {
+        this.rejectSeedScript()
+      }
+    })
+  }
+
   rejectSeedScript() {
     const gradingInfo = this.store().gradingInfo
     const seedResponse = this._dataService.tempStore().seedQuestionsResponse
 
     const payload = {
-      marker_id: gradingInfo?.data.examiner_id,
+      marker_id: this._dataService.userRemoteId(),
       session_id: gradingInfo?.data.session_id,
       subject_id: gradingInfo?.data.subject_id,
       assessment_id: gradingInfo?.data.assessment_id,
@@ -88,21 +103,26 @@ export class Overview implements OnDestroy {
       psr_id: Number(seedResponse?.psr_id),
       participant_id: this._dataService.participantId(),
       lock_id: Number(seedResponse?.lock),
-      mark_type: 'Seed' as MarkType,
+      mark_type: MarkType.SEED,
     }
 
-    this._dataService.rejectSeedScript(payload).subscribe({
-      next: () => {
-        this._toast.success('Seed script rejected successfully')
-        this.showGradingSummary.set(false)
-        this.isRejectingSeed.set(false)
-        this.router.navigate(['/grading/overview'])
-      },
-      error: (error) => {
-        this._toast.error(error.error.message ?? 'Sorry! Could not reject script. Please try again.')
-        this.isRejectingSeed.set(false)
-      }
-    })
+    this._dataService.rejectSeedScript(payload)
+      .pipe(this._toast.observe({
+        loading: 'Skipping script...',
+        success: 'Script skipped successfully',
+        error: ' '
+      }))
+      .subscribe({
+        next: () => {
+          this.showGradingSummary.set(false)
+          this.isRejectingSeed.set(false)
+          this._dataService.fetchAllGradingData()
+        },
+        error: (error) => {
+          this._toast.error(error.error.message ?? 'Sorry! Could not skip script. Please try again.')
+          this.isRejectingSeed.set(false)
+        }
+      })
   }
 
   openFinishConfirmation() {

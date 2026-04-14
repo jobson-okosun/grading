@@ -259,12 +259,29 @@ export interface UserProxyRequest {
   }
 }
 
-
 export interface SeedParticipantSectionTranscript {
   scripts: ParticipantSectionTranscript[];
   lock: number;
   psr_id: number;
+  participant_id: string
 }
+
+export class SeedScriptAssignmentRequest {
+  examiner_id: string
+  session_id: string
+  assessment_id: string
+  subject_id: string
+  section_id: string
+
+  constructor() {
+    this.examiner_id = ''
+    this.session_id = ''
+    this.assessment_id = ''
+    this.subject_id = ''
+    this.section_id = ''
+  }
+}
+
 
 export interface SessionStateMessage {
   message: string;
@@ -546,8 +563,8 @@ export class ResourceCreated {
 }
 
 export enum MarkType {
-  Seed = "Seed",
-  Script = "Script",
+  SEED = "SEED",
+  SCRIPT = "SCRIPT",
 }
 
 export interface RejectSeedByExaminerDTO {
@@ -569,7 +586,7 @@ export class DataServiceTempStore {
   candidate: Participant_Result_Data_DTO | null;
   gradingInfo: UserProxyRequest | null;
   session: SessionStateMessage | null;
-  schemeId: string | null;
+  schemes: SchemeSectionsResponseDTO[]
 
   constructor() {
     this.markingGuide = null;
@@ -578,6 +595,6 @@ export class DataServiceTempStore {
     this.candidate = null;
     this.gradingInfo = null;
     this.session = null;
-    this.schemeId = null;
+    this.schemes = []
   }
 }

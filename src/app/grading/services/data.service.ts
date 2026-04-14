@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { computed, effect, inject, Injectable, signal, untracked } from "@angular/core";
-import { DataServiceTempStore, ExaminerGradeSeedDTO, Grading, Participant_Result_Data_DTO, ParticipantSectionTranscript, RejectSeedByExaminerDTO, ResourceCreated, ResourceModified, SchemePageData, SchemeSectionsResponseDTO, SeedParticipantSectionTranscript, SessionState, SessionStateMessage, UserProxyRequest } from "../model/types";
+import { DataServiceTempStore, ExaminerGradeSeedDTO, Grading, Participant_Result_Data_DTO, ParticipantSectionTranscript, RejectSeedByExaminerDTO, ResourceCreated, ResourceModified, SchemePageData, SchemeSectionsResponseDTO, SeedParticipantSectionTranscript, SeedScriptAssignmentRequest, SessionState, SessionStateMessage, UserProxyRequest } from "../model/types";
 import { environment } from "../../../environments/environment";
 import { finalize, lastValueFrom, Observable, tap } from "rxjs";
 import { MOCK_MARKING_GUIDE } from "../model/mock/marking-guide";
@@ -22,12 +22,20 @@ export class DataService {
 
     assessmentId = computed(() => this.tempStore().gradingInfo?.data.assessment_id)
     sectionId = computed(() => this.tempStore().gradingInfo?.data.section_id)
-    schemeId = computed(() => this.tempStore().schemeId)
-    participantId = signal<string>('')
+    schemeId = computed(() => {
+        const section = this.tempStore().gradingInfo?.data.section_id
+        return this.tempStore().schemes.find(scheme => scheme.id === section)?.scheme_id
+    })
+
+    participantId = computed(() => {
+        // todo: set based on the grading type: seed or normal
+        return this.tempStore().seedQuestionsResponse?.participant_id ?? ''
+    })
 
     sessionId = signal<string>('')
     subjectId = signal<string>('')
     userId = signal<string>('')
+    userRemoteId = signal<string>('019d8c05-0e29-7325-85bf-f7d79df51c1f')
 
     isLoadingGuide = signal(false)
     isLoadingQuestions = signal(false)
@@ -35,24 +43,36 @@ export class DataService {
     async fetchAllGradingData() {
         try {
             await lastValueFrom(this.fetchMarkingGuide())
-            await lastValueFrom(this.fetchQuestionsToGrade())
-            await lastValueFrom(this.fetchCandidateResult())
         } catch (error) {
-            this._toast.error('Failed load grading data', { position: 'top-right' })
+            this._toast.error('Failed to load marking guide', { position: 'top-right' })
+            return
         }
+
+        try {
+            await lastValueFrom(this.fetchQuestionsToGrade())
+        } catch (error) {
+            this._toast.error('Failed to load questions to grade', { position: 'top-right' })
+            return
+        }
+
+        // try {
+        //     await lastValueFrom(this.fetchCandidateResult())
+        // } catch (error) {
+        //     this._toast.error('Failed to load candidate result', { position: 'top-right' })
+        // }
     }
 
     login(): Observable<any> {
         return this._http.post<any>(`${environment.developmentIP2}/proxy/remote/login/${this.userId()}`, {})
     }
 
-    fetchSchemeId(): Observable<SchemeSectionsResponseDTO> {
-        return this._http.get<SchemeSectionsResponseDTO>(`${environment.developmentIP}/sch_mon_grd/reports/marker_app_ui/assessment/${this.assessmentId()}/fetch_subject_schemes`)
+    fetchSchemeId(): Observable<SchemeSectionsResponseDTO[]> {
+        return this._http.get<SchemeSectionsResponseDTO[]>(`${environment.developmentIP}/sch_mon_grd/marker_app_ui/assessment/${this.assessmentId()}/fetch_subject_schemes`)
             .pipe(
                 tap((response) => {
                     this.tempStore.update(v => ({
                         ...v,
-                        schemeId: response.scheme_id
+                        schemes: response
                     }))
                 })
             )
@@ -85,7 +105,9 @@ export class DataService {
     }
 
     fetchMarkingGuide(): Observable<SchemePageData> {
-        return this._http.get<SchemePageData>(`${environment.developmentIP}/sch_mon_grd/schedule/assessment/${this.assessmentId()}/marking_scheme/section/${this.sectionId()}/scheme_id/${this.schemeId()}/fetch_scheme_page`)
+        this.isLoadingGuide.set(true)
+
+        return this._http.get<SchemePageData>(`${environment.developmentIP}/sch_mon_grd/marker_app_ui/assessment/${this.assessmentId()}/marking_scheme/section/${this.sectionId()}/scheme_id/${this.schemeId()}/fetch_scheme_page`)
             .pipe(
                 tap((response) => {
                     this.tempStore.update(v => ({
@@ -98,9 +120,21 @@ export class DataService {
     }
 
     fetchSeedToGrade(save: boolean): Observable<SeedParticipantSectionTranscript> {
-        return this._http.get<SeedParticipantSectionTranscript>(`${environment.developmentIP}/sch_mon_grd/reports/marker_app_ui/seed/fetch_seed_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
+        const params = new SeedScriptAssignmentRequest()
+        params.examiner_id = this.userRemoteId()
+        params.session_id = this.sessionId()
+        params.assessment_id = this.assessmentId()!
+        params.subject_id = this.subjectId()
+        params.section_id = this.sectionId()!
+
+        this.isLoadingQuestions.set(true)
+        return this._http.get<SeedParticipantSectionTranscript>(`${environment.developmentIP}/sch_mon_grd/marker_app_ui/seed/fetch_seed_to_grade`, { params: { ...params } })
             .pipe(
                 tap((response) => {
+                    response.scripts.forEach(script => {
+                        script.item_score.annotations = []
+                    })
+
                     if (save) {
                         this.tempStore.update(v => ({
                             ...v,
@@ -113,23 +147,23 @@ export class DataService {
     }
 
     rejectSeedScript(payload: RejectSeedByExaminerDTO): Observable<ResourceModified> {
-        return this._http.post<ResourceModified>(`${environment.developmentIP}/sch_mon_grd/reports/marker_app_ui/seed/reject`, payload)
+        return this._http.patch<ResourceModified>(`${environment.developmentIP}/sch_mon_grd/marker_app_ui/seed/reject`, payload)
     }
 
     finishSeedGrading(payload: ExaminerGradeSeedDTO): Observable<ResourceCreated> {
-        return this._http.post<ResourceCreated>(`${environment.developmentIP}/sch_mon_grd/reports/marker_app_ui/seed/grade`, payload)
+        return this._http.post<ResourceCreated>(`${environment.developmentIP}/sch_mon_grd/marker_app_ui/seed/grade`, payload)
     }
 
-    fetchQuestionsToGrade(save?: boolean): Observable<SeedParticipantSectionTranscript | ParticipantSectionTranscript[]> {
+    fetchQuestionsToGrade(save = true): Observable<SeedParticipantSectionTranscript | ParticipantSectionTranscript[]> {
         if (this._gradingService.isGradingSeed()) {
-            return this.fetchSeedToGrade(save ? true : false)
+            return this.fetchSeedToGrade(save)
         } else {
-            return this.fetchQuestions(save ? true : false)
+            return this.fetchQuestions(save)
         }
     }
 
     fetchQuestions(save: boolean): Observable<ParticipantSectionTranscript[]> {
-        return this._http.get<ParticipantSectionTranscript[]>(`${environment.developmentIP}/sch_mon_grd/reports/grading/items_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
+        return this._http.get<ParticipantSectionTranscript[]>(`${environment.developmentIP}/sch_mon_grd/marker_app_ui/grading/items_to_grade`)
             .pipe(
                 tap((response) => {
                     this.tempStore.update(v => ({
@@ -156,14 +190,6 @@ export class DataService {
         return this._http.post<ResourceCreated>(`${environment.developmentIP}/sch_mon_grd/reports/grading/grade_manual_items/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`, payload)
     }
 
-    reloadGradingServiceDataEffect = effect(() => {
-        if (this._gradingService.gradingStarted()) {
-            untracked(() => {
-                this.fetchAllGradingData()
-            })
-        }
-    })
-
     hasCompleteStoreData = effect(() => {
         const data = this.tempStore()
 
@@ -172,7 +198,7 @@ export class DataService {
                 data?.markingGuide &&
                 data.session &&
                 data.gradingInfo &&
-                data.schemeId &&
+                data.schemes.length > 0 &&
                 (data.seedQuestionsResponse)
             ) {
                 const markingGuide = this._gradingService.formatAndSaveMarkginGudeResponse(data.markingGuide)
@@ -198,7 +224,8 @@ export class DataService {
             seedQuestionsResponse: {
                 scripts: MOCK_QUESTIONS,
                 lock: 0,
-                psr_id: 0
+                psr_id: 0,
+                participant_id: '1'
             },
             candidate: MOCK_RESULT,
             gradingInfo: {
