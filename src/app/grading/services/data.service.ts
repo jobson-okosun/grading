@@ -47,7 +47,7 @@ export class DataService {
     }
 
     fetchSchemeId(): Observable<SchemeSectionsResponseDTO> {
-        return this._http.get<SchemeSectionsResponseDTO>(`${environment.schedulerIP}/sch_mon_grd/reports/marker_app_ui/assessment/${this.assessmentId()}/fetch_subject_schemes`)
+        return this._http.get<SchemeSectionsResponseDTO>(`${environment.developmentIP}/sch_mon_grd/reports/marker_app_ui/assessment/${this.assessmentId()}/fetch_subject_schemes`)
             .pipe(
                 tap((response) => {
                     this.tempStore.update(v => ({
@@ -98,7 +98,7 @@ export class DataService {
     }
 
     fetchSeedToGrade(save: boolean): Observable<SeedParticipantSectionTranscript> {
-        return this._http.get<SeedParticipantSectionTranscript>(`${environment.schedulerIP}/sch_mon_grd/reports/marker_app_ui/seed/fetch_seed_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
+        return this._http.get<SeedParticipantSectionTranscript>(`${environment.developmentIP}/sch_mon_grd/reports/marker_app_ui/seed/fetch_seed_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
             .pipe(
                 tap((response) => {
                     if (save) {
@@ -113,11 +113,11 @@ export class DataService {
     }
 
     rejectSeedScript(payload: RejectSeedByExaminerDTO): Observable<ResourceModified> {
-        return this._http.post<ResourceModified>(`${environment.schedulerIP}/sch_mon_grd/reports/marker_app_ui/seed/reject`, payload)
+        return this._http.post<ResourceModified>(`${environment.developmentIP}/sch_mon_grd/reports/marker_app_ui/seed/reject`, payload)
     }
 
     finishSeedGrading(payload: ExaminerGradeSeedDTO): Observable<ResourceCreated> {
-        return this._http.post<ResourceCreated>(`${environment.schedulerIP}/sch_mon_grd/reports/marker_app_ui/seed/grade`, payload)
+        return this._http.post<ResourceCreated>(`${environment.developmentIP}/sch_mon_grd/reports/marker_app_ui/seed/grade`, payload)
     }
 
     fetchQuestionsToGrade(save?: boolean): Observable<SeedParticipantSectionTranscript | ParticipantSectionTranscript[]> {
@@ -129,7 +129,7 @@ export class DataService {
     }
 
     fetchQuestions(save: boolean): Observable<ParticipantSectionTranscript[]> {
-        return this._http.get<ParticipantSectionTranscript[]>(`${environment.schedulerIP}/sch_mon_grd/reports/grading/items_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
+        return this._http.get<ParticipantSectionTranscript[]>(`${environment.developmentIP}/sch_mon_grd/reports/grading/items_to_grade/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`)
             .pipe(
                 tap((response) => {
                     this.tempStore.update(v => ({
@@ -141,7 +141,7 @@ export class DataService {
     }
 
     fetchCandidateResult(): Observable<Participant_Result_Data_DTO> {
-        return this._http.get<Participant_Result_Data_DTO>(`${environment.schedulerIP}/sch_mon_grd/reports/result/participant_result/assessment/${this.assessmentId()}/participant/${this.participantId()}`)
+        return this._http.get<Participant_Result_Data_DTO>(`${environment.developmentIP}/sch_mon_grd/reports/result/participant_result/assessment/${this.assessmentId()}/participant/${this.participantId()}`)
             .pipe(
                 tap((response) => {
                     this.tempStore.update(v => ({
@@ -153,7 +153,7 @@ export class DataService {
     }
 
     finishGrading(payload: Grading[]): Observable<ResourceCreated> {
-        return this._http.post<ResourceCreated>(`${environment.schedulerIP}/sch_mon_grd/reports/grading/grade_manual_items/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`, payload)
+        return this._http.post<ResourceCreated>(`${environment.developmentIP}/sch_mon_grd/reports/grading/grade_manual_items/assessment/${this.assessmentId()}/section/${this.sectionId()}/participant/${this.participantId()}`, payload)
     }
 
     reloadGradingServiceDataEffect = effect(() => {
