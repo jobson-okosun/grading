@@ -30,6 +30,12 @@ export default class Layout {
     try {
       // other api calls must be called after this login
       await lastValueFrom(this._dataService.login())
+    } catch (error) {
+      this._toast.error('Authentication failed!', { position: 'top-center', duration: 60000 })
+      return
+    }
+
+    try {
       await lastValueFrom(this._dataService.fetchGradingInformation())
       await lastValueFrom(this._dataService.fetchSessionState())
       await lastValueFrom(this._dataService.fetchSchemeId())
